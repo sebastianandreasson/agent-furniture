@@ -16,6 +16,7 @@ another agent from a clean checkout.
 5. Run `uv run querycad validate <design.json>`, `uv run ruff check .`,
    `uv run ruff format --check .`, and `uv run pytest` after a change. For geometry changes, also run
    `uv run querycad build <design.json>` and inspect the reported bounding box and artifact list.
+   For viewer changes, run `cd web && npm run check && npm run build`.
 6. Never commit `.venv/`, `build/`, exports, caches, or editor state. Do commit `uv.lock` whenever
    dependencies change.
 
@@ -27,6 +28,16 @@ another agent from a clean checkout.
 - Repeated parts share one part number and use multiple placements so BOM quantities stay correct.
 - Tests cover overall size, part quantities, solid validity, and at least one invalid parameter set.
 - The standard build produces STEP, GLB, STL, SVG, per-part STL, BOM, and manifest outputs.
+- A default build refreshes `build/catalog.json`; the web UI discovers GLB builds only through that
+  generated contract. Do not hard-code individual furniture builds in React.
+
+## Coordinate boundary
+
+CadQuery source uses its conventional Z-up construction space: X length, Y depth, Z height. Browser
+world space is Y-up: X left/right, Y vertical, Z depth. OpenCascade's glTF writer performs the axis
+conversion, and `FurnitureModel` verifies/normalizes the GLB bounds against manifest dimensions at a
+single scene boundary. Placement values in the UI are always browser-world millimetres. Do not add
+arbitrary mesh scale to saved placement state.
 
 ## Fabrication boundary
 

@@ -20,6 +20,25 @@ isometric drawing, one STL per unique part, a BOM CSV, and a machine-readable ma
 `build/dining-table/`. Generated files are intentionally ignored by Git; source models, design
 specifications, tests, and the dependency lockfile are committed.
 
+## Web studio
+
+The Vite app in `web/` discovers every complete GLB build through `build/catalog.json`. Its lifecycle
+scripts rebuild the example model automatically, so one command runs the whole local flow:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Open `http://127.0.0.1:5173`. The editor streams an online starter Gaussian splat, loads the exact
+CadQuery GLB from `build/`, and provides move/rotate gizmos, numeric millimetre controls, snapping,
+camera presets, layer controls, and direct links to STEP, BOM, manifest, and GLB artifacts.
+
+After an agent changes or adds a model, run its normal QueryCAD build. The UI polls the catalog every
+five seconds and uses the GLB content hash to replace changed geometry without losing the saved
+placement. `npm run build` creates a standalone `web/dist/` bundle containing the current artifacts.
+
 ## Agent workflow
 
 Ask an agent in this repository for outcomes such as:
@@ -58,8 +77,10 @@ uv run pytest
 ```
 
 All model dimensions are millimetres. Coordinates use X for width/length, Y for depth, and Z for
-height, with the floor at Z=0. STEP is the master exchange format; STL is a tessellated convenience
-format and should not be treated as editable source.
+height inside CadQuery, with the floor at Z=0. The glTF exporter converts that boundary to the web
+scene's Y-up convention; browser placements are X left/right, Y vertical, and Z depth. STEP is the
+master exchange format; STL is a tessellated convenience format and should not be treated as editable
+source.
 
 ## Scope and safety
 

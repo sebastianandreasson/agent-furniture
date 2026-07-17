@@ -5,7 +5,7 @@ from pathlib import Path
 
 from querycad.cli import main
 from querycad.config import load_design
-from querycad.export import export_design
+from querycad.export import export_design, write_catalog
 
 DESIGN = Path("designs/dining-table.json")
 
@@ -38,3 +38,21 @@ def test_export_bom_svg_and_stl(tmp_path: Path) -> None:
     manifest = json.loads((tmp_path / "manifest.json").read_text())
     assert manifest["overall_size_mm"] == {"x": 1600.0, "y": 800.0, "z": 750.0}
     assert manifest["part_occurrences"] == 9
+
+
+def test_catalog_indexes_a_complete_glb_build(tmp_path: Path) -> None:
+    design = load_design(DESIGN)
+    build_dir = tmp_path / "dining-table"
+    export_design(design, build_dir, ("glb", "step", "bom"))
+
+    catalog_path = write_catalog(tmp_path)
+    catalog = json.loads(catalog_path.read_text())
+
+    assert catalog["schemaVersion"] == 1
+    assert catalog["units"] == "mm"
+    assert len(catalog["designs"]) == 1
+    entry = catalog["designs"][0]
+    assert entry["id"] == "dining-table"
+    assert entry["overallSizeMm"] == {"x": 1600.0, "y": 800.0, "z": 750.0}
+    assert entry["artifacts"]["glb"] == "/dining-table/dining-table.glb"
+    assert len(entry["revision"]) == 16

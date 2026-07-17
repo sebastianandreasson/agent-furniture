@@ -9,7 +9,7 @@ from pathlib import Path
 
 from querycad.config import load_design
 from querycad.core import Design
-from querycad.export import DEFAULT_FORMATS, SUPPORTED_FORMATS, export_design
+from querycad.export import DEFAULT_FORMATS, SUPPORTED_FORMATS, export_design, write_catalog
 from querycad.registry import MODELS
 
 
@@ -62,6 +62,8 @@ def main(argv: list[str] | None = None) -> int:
         output = args.output or Path("build") / args.design.stem
         formats = tuple(item.strip() for item in args.formats.split(",") if item.strip())
         artifacts = export_design(design, output, formats)
+        if output.parent.name == "build":
+            artifacts.append(write_catalog(output.parent))
         result = {**_summary(design), "artifacts": [str(path) for path in artifacts]}
         print(json.dumps(result, indent=2))
         return 0

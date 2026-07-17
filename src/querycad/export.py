@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import re
 from collections.abc import Iterable
@@ -70,6 +71,74 @@ def _manifest(design: Design, artifacts: Iterable[Path], root: Path) -> dict[str
         ],
         "artifacts": sorted(str(path.relative_to(root)) for path in artifacts),
     }
+
+
+def _artifact_url(path: Path, build_root: Path) -> str:
+    return f"/{path.relative_to(build_root).as_posix()}"
+
+
+def _file_revision(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()[:16]
+
+
+def write_catalog(build_root: Path) -> Path:
+    """Index complete builds for the Vite viewer without duplicating model metadata."""
+    build_root.mkdir(parents=True, exist_ok=True)
+    designs: list[dict[str, Any]] = []
+    for manifest_path in sorted(build_root.glob("*/manifest.json")):
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+
+        build_dir = manifest_path.parent
+        glb_files = sorted(build_dir.glob("*.glb"))
+        if not glb_files:
+            continue
+        glb_path = glb_files[0]
+        artifacts: dict[str, str] = {
+            "manifest": _artifact_url(manifest_path, build_root),
+            "glb": _artifact_url(glb_path, build_root),
+        }
+        patterns = {
+            "step": "*.step",
+            "stl": "*.stl",
+            "svg": "*.svg",
+            "bom": "bom.csv",
+        }
+        for key, pattern in patterns.items():
+            matches = sorted(build_dir.glob(pattern))
+            if matches:
+                artifacts[key] = _artifact_url(matches[0], build_root)
+
+        designs.append(
+            {
+                "id": build_dir.name,
+                "name": manifest["name"],
+                "model": manifest["model"],
+                "revision": _file_revision(glb_path),
+                "overallSizeMm": manifest["overall_size_mm"],
+                "partOccurrences": manifest["part_occurrences"],
+                "parameters": manifest["parameters"],
+                "artifacts": artifacts,
+            }
+        )
+
+    catalog = {
+        "schemaVersion": 1,
+        "units": "mm",
+        "designs": designs,
+    }
+    catalog_path = build_root / "catalog.json"
+    catalog_path.write_text(
+        json.dumps(catalog, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return catalog_path
 
 
 def export_design(design: Design, output_dir: Path, formats: Iterable[str]) -> list[Path]:
