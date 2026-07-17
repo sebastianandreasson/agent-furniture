@@ -1,0 +1,19 @@
+{
+  "name": "dining-table",
+  "model": "apron_table",
+  "parameters": {
+    "length": 1600.0,
+    "depth": 800.0,
+    "height": 750.0,
+    "top_thickness": 30.0,
+    "top_corner_radius": 12.0,
+    "leg_size": 70.0,
+    "end_overhang": 100.0,
+    "side_overhang": 60.0,
+    "apron_height": 110.0,
+    "apron_thickness": 22.0,
+    "apron_top_gap": 15.0,
+    "top_material": "oak",
+    "frame_material": "ash"
+  }
+}

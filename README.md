@@ -1,0 +1,69 @@
+# queryCAD
+
+A code-first CadQuery workspace for designing parametric furniture under agent control. Design
+intent lives in versioned Python, dimensions live in small JSON files, and one CLI validates and
+exports fabrication-friendly artifacts.
+
+## Start here
+
+The environment is managed by `uv` and pinned to Python 3.12 and CadQuery 2.8.0.
+
+```bash
+uv sync
+uv run querycad list
+uv run querycad validate designs/dining-table.json
+uv run querycad build designs/dining-table.json
+```
+
+The build command writes an assembly STEP file, a browser-viewable GLB, an assembly STL, an SVG
+isometric drawing, one STL per unique part, a BOM CSV, and a machine-readable manifest beneath
+`build/dining-table/`. Generated files are intentionally ignored by Git; source models, design
+specifications, tests, and the dependency lockfile are committed.
+
+## Agent workflow
+
+Ask an agent in this repository for outcomes such as:
+
+> Make this dining table 1800 mm long, keep a 750 mm overall height, and rebuild the exports.
+
+> Add a parametric wall shelf with three bays, adjustable shelf thickness, and a cut list.
+
+> Add mortise-and-tenon joinery to the table, then test that all solids remain valid.
+
+The repository contract in `AGENTS.md` tells an agent how to make and verify those changes. A new
+design variant normally needs only a JSON file. A new furniture family gets a model module,
+registry entry, example specification, and tests; see `docs/ADDING_A_MODEL.md`.
+
+## Commands
+
+```bash
+# Show available furniture families
+uv run querycad list
+
+# Validate dimensions without creating CAD files
+uv run querycad validate designs/dining-table.json
+
+# Build all default formats
+uv run querycad build designs/dining-table.json
+
+# Select formats and destination
+uv run querycad build designs/dining-table.json \
+  --formats step,glb,stl,svg,bom \
+  --output build/custom-table
+
+# Run the quality gate
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+```
+
+All model dimensions are millimetres. Coordinates use X for width/length, Y for depth, and Z for
+height, with the floor at Z=0. STEP is the master exchange format; STL is a tessellated convenience
+format and should not be treated as editable source.
+
+## Scope and safety
+
+This workspace makes geometry, part lists, and exports reproducible. It does not certify structural
+capacity, stability, ergonomics, joinery, tool paths, or building-code compliance. Before fabrication,
+verify loads, material properties, joints, clearances, tolerances, and workshop safety with a qualified
+person where the consequences warrant it.
