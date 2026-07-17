@@ -1,5 +1,5 @@
 import { Clone, TransformControls, useGLTF } from '@react-three/drei'
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Box3, MathUtils, Vector3, type Object3D } from 'three'
 import type { TransformControls as TransformControlsImpl } from 'three-stdlib'
 import { DEFAULT_PLACEMENT, useEditorStore } from '../state/editor'
@@ -17,8 +17,11 @@ export function FurnitureModel({ design }: { design: CatalogDesign }) {
   const setPlacement = useEditorStore((state) => state.setPlacement)
   const mode = useEditorStore((state) => state.transformMode)
   const snapping = useEditorStore((state) => state.snapping)
+  const showHelpers = useEditorStore((state) => state.showHelpers)
   const source = `${design.artifacts.glb}?revision=${design.revision}`
   const { scene } = useGLTF(source)
+
+  useEffect(() => () => useGLTF.clear(source), [source])
 
   const normalized = useMemo(() => {
     scene.updateMatrixWorld(true)
@@ -63,59 +66,70 @@ export function FurnitureModel({ design }: { design: CatalogDesign }) {
     setPlacement(design.id, next)
   }
 
+  const rotation = placement.rotationDeg.map(MathUtils.degToRad) as [
+    number,
+    number,
+    number,
+  ]
+  const model = (
+    <group name={`placement-${design.id}`}>
+      <group scale={normalized.scale}>
+        <Clone
+          object={scene}
+          position={normalized.offset}
+          deep="materialsOnly"
+          castShadow
+          receiveShadow
+        />
+      </group>
+      {showHelpers && (
+        <mesh
+          position={[0, design.overallSizeMm.z / 2, 0]}
+          raycast={() => null}
+        >
+          <boxGeometry
+            args={[
+              design.overallSizeMm.x + 12,
+              design.overallSizeMm.z + 12,
+              design.overallSizeMm.y + 12,
+            ]}
+          />
+          <meshBasicMaterial
+            color="#ffb86b"
+            wireframe
+            transparent
+            opacity={0.36}
+            depthTest={false}
+          />
+        </mesh>
+      )}
+    </group>
+  )
+
+  if (!showHelpers) {
+    return (
+      <group position={placement.positionMm} rotation={rotation}>
+        {model}
+      </group>
+    )
+  }
+
   return (
-    <>
-      <TransformControls
-        ref={controlsRef}
-        mode={mode}
-        space="world"
-        size={0.82}
-        translationSnap={snapping ? 50 : null}
-        rotationSnap={snapping ? MathUtils.degToRad(15) : null}
-        showX={mode === 'translate'}
-        showY
-        showZ={mode === 'translate'}
-        onMouseUp={commitTransform}
-        position={placement.positionMm}
-        rotation={
-          placement.rotationDeg.map(MathUtils.degToRad) as [
-            number,
-            number,
-            number,
-          ]
-        }
-      >
-        <group name={`placement-${design.id}`}>
-          <group scale={normalized.scale}>
-            <Clone
-              object={scene}
-              position={normalized.offset}
-              deep="materialsOnly"
-              castShadow
-              receiveShadow
-            />
-          </group>
-          <mesh
-            position={[0, design.overallSizeMm.z / 2, 0]}
-            raycast={() => null}
-          >
-            <boxGeometry
-              args={[
-                design.overallSizeMm.x + 12,
-                design.overallSizeMm.z + 12,
-                design.overallSizeMm.y + 12,
-              ]}
-            />
-            <meshBasicMaterial
-              color="#ffb86b"
-              wireframe
-              transparent
-              opacity={0.36}
-              depthTest={false}
-            />
-          </mesh>
-        </group>
-      </TransformControls>
-    </>
+    <TransformControls
+      ref={controlsRef}
+      mode={mode}
+      space="world"
+      size={0.82}
+      translationSnap={snapping ? 50 : null}
+      rotationSnap={snapping ? MathUtils.degToRad(15) : null}
+      showX={mode === 'translate'}
+      showY
+      showZ={mode === 'translate'}
+      onMouseUp={commitTransform}
+      position={placement.positionMm}
+      rotation={rotation}
+    >
+      {model}
+    </TransformControls>
   )
 }

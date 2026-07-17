@@ -10,6 +10,7 @@ from pathlib import Path
 from querycad.config import load_design
 from querycad.core import Design
 from querycad.export import DEFAULT_FORMATS, SUPPORTED_FORMATS, export_design, write_catalog
+from querycad.preview import PreviewOptions, run_preview
 from querycad.registry import MODELS
 
 
@@ -35,6 +36,41 @@ def _parser() -> argparse.ArgumentParser:
     validate = subparsers.add_parser("validate", help="validate a JSON design without exporting")
     validate.add_argument("design", type=Path)
 
+    preview = subparsers.add_parser(
+        "preview",
+        help="watch a design and Python model code, rebuild, and run the web studio",
+    )
+    preview.add_argument(
+        "design",
+        type=Path,
+        nargs="?",
+        default=Path("designs/entryway-bench.json"),
+    )
+    preview.add_argument("--host", default="127.0.0.1")
+    preview.add_argument("--port", type=int, default=5173)
+    preview.add_argument(
+        "--no-web",
+        action="store_true",
+        help="watch and rebuild without starting or checking Vite",
+    )
+    preview.add_argument(
+        "--poll-interval",
+        type=float,
+        default=0.25,
+        help="filesystem polling interval in seconds (default: 0.25)",
+    )
+    preview.add_argument(
+        "--debounce",
+        type=float,
+        default=0.35,
+        help="quiet period before rebuilding in seconds (default: 0.35)",
+    )
+    preview.add_argument(
+        "--once",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
+
     build = subparsers.add_parser("build", help="validate and export a JSON design")
     build.add_argument("design", type=Path)
     build.add_argument(
@@ -53,6 +89,19 @@ def main(argv: list[str] | None = None) -> int:
             for name, definition in sorted(MODELS.items()):
                 print(f"{name}: {definition.description}")
             return 0
+
+        if args.command == "preview":
+            return run_preview(
+                PreviewOptions(
+                    design=args.design,
+                    host=args.host,
+                    port=args.port,
+                    poll_interval=args.poll_interval,
+                    debounce=args.debounce,
+                    start_web=not args.no_web,
+                    once=args.once,
+                )
+            )
 
         design = load_design(args.design)
         if args.command == "validate":

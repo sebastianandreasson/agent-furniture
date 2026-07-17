@@ -66,7 +66,11 @@ def _manifest(design: Design, artifacts: Iterable[Path], root: Path) -> dict[str
         "overall_size_mm": {"x": size[0], "y": size[1], "z": size[2]},
         "part_occurrences": design.total_occurrences(),
         "parts": [
-            {**row, "placements": [item.as_dict() for item in part.placements]}
+            {
+                **row,
+                "color_rgba": list(part.color),
+                "placements": [item.as_dict() for item in part.placements],
+            }
             for row, part in zip(_bom_rows(design), design.parts, strict=True)
         ],
         "artifacts": sorted(str(path.relative_to(root)) for path in artifacts),

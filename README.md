@@ -1,8 +1,8 @@
 # queryCAD
 
 A code-first CadQuery workspace for designing parametric furniture under agent control. Design
-intent lives in versioned Python, dimensions live in small JSON files, and one CLI validates and
-exports fabrication-friendly artifacts.
+intent and defaults live in versioned Python, small JSON files select a family and optionally
+override values for variants, and one CLI validates and exports fabrication-friendly artifacts.
 
 ## Start here
 
@@ -13,6 +13,7 @@ uv sync
 uv run querycad list
 uv run querycad validate designs/dining-table.json
 uv run querycad build designs/dining-table.json
+uv run querycad build designs/entryway-bench.json
 ```
 
 The build command writes an assembly STEP file, a browser-viewable GLB, an assembly STL, an SVG
@@ -23,7 +24,29 @@ specifications, tests, and the dependency lockfile are committed.
 ## Web studio
 
 The Vite app in `web/` discovers every complete GLB build through `build/catalog.json`. Its lifecycle
-scripts rebuild the example model automatically, so one command runs the whole local flow:
+scripts rebuild the example model automatically. For iterative model work, run the Python live
+preview from the repository root:
+
+```bash
+uv run querycad preview designs/entryway-bench.json
+# equivalent convenience script:
+uv run python scripts/preview.py designs/entryway-bench.json
+```
+
+The preview performs an initial build, starts or reuses the Vite studio at
+`http://127.0.0.1:5173`, and watches the selected design JSON, `pyproject.toml`, and every Python file
+under `src/querycad/`. After a save settles, it rebuilds in a fresh process. The web UI checks the
+catalog revision every second and swaps in the new GLB while preserving furniture placement. A
+temporary invalid edit prints a build error but leaves the last successful model visible; fix it and
+save again. Stop the watcher with Ctrl-C. Only one watcher can own a design at a time.
+
+For live bench experiments, edit the values on `EntrywayBenchSpec` in
+`src/querycad/models/entryway_bench.py`. The example JSON intentionally has an empty `parameters`
+object, so Python values drive the build directly. Add a key to that JSON only when you deliberately
+want it to override the corresponding Python default for this design variant. The watcher calls out
+successful rebuilds that produced the same GLB revision.
+
+The direct frontend workflow remains available when live CAD rebuilding is not needed:
 
 ```bash
 cd web
@@ -35,8 +58,12 @@ Open `http://127.0.0.1:5173`. The editor streams an online starter Gaussian spla
 CadQuery GLB from `build/`, and provides move/rotate gizmos, numeric millimetre controls, snapping,
 camera presets, layer controls, and direct links to STEP, BOM, manifest, and GLB artifacts.
 
+The default web lifecycle now builds the photo-derived entryway bench. Its editable defaults live in
+`EntrywayBenchSpec`; the design JSON contains optional variant overrides, and the visual assumptions
+behind the estimates are documented in `docs/ENTRYWAY_BENCH.md`.
+
 After an agent changes or adds a model, run its normal QueryCAD build. The UI polls the catalog every
-five seconds and uses the GLB content hash to replace changed geometry without losing the saved
+second and uses the GLB content hash to replace changed geometry without losing the saved
 placement. `npm run build` creates a standalone `web/dist/` bundle containing the current artifacts.
 
 ## Agent workflow
@@ -58,6 +85,9 @@ registry entry, example specification, and tests; see `docs/ADDING_A_MODEL.md`.
 ```bash
 # Show available furniture families
 uv run querycad list
+
+# Live CAD rebuild loop plus web studio
+uv run querycad preview designs/entryway-bench.json
 
 # Validate dimensions without creating CAD files
 uv run querycad validate designs/dining-table.json

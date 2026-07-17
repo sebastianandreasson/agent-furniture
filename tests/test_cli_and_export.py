@@ -38,6 +38,7 @@ def test_export_bom_svg_and_stl(tmp_path: Path) -> None:
     manifest = json.loads((tmp_path / "manifest.json").read_text())
     assert manifest["overall_size_mm"] == {"x": 1600.0, "y": 800.0, "z": 750.0}
     assert manifest["part_occurrences"] == 9
+    assert manifest["parts"][0]["color_rgba"] == list(design.parts[0].color)
 
 
 def test_catalog_indexes_a_complete_glb_build(tmp_path: Path) -> None:

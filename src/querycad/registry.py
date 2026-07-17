@@ -8,6 +8,7 @@ from typing import Any
 
 from querycad.core import Design
 from querycad.models.apron_table import ApronTableSpec, build_apron_table
+from querycad.models.entryway_bench import EntrywayBenchSpec, build_entryway_bench
 
 Builder = Callable[[str, dict[str, Any]], Design]
 
@@ -26,7 +27,13 @@ MODELS: dict[str, ModelDefinition] = {
         description="Four-leg rectangular table with a solid top and inset aprons",
         builder=build_apron_table,
         defaults=ApronTableSpec().as_dict(),
-    )
+    ),
+    "entryway_bench": ModelDefinition(
+        name="entryway_bench",
+        description="Cushioned bench with an indented extension and angled shoe shelf",
+        builder=build_entryway_bench,
+        defaults=EntrywayBenchSpec().as_dict(),
+    ),
 }
 
 

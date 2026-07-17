@@ -39,6 +39,10 @@ export function parseCatalog(value: unknown): BuildCatalog {
   return value as BuildCatalog
 }
 
+export function catalogSignature(catalog: BuildCatalog): string {
+  return JSON.stringify(catalog)
+}
+
 export async function loadCatalog(signal?: AbortSignal): Promise<BuildCatalog> {
   const response = await fetch(`${CATALOG_URL}?refresh=${Date.now()}`, {
     cache: 'no-store',

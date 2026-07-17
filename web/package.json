@@ -4,9 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "model:build": "cd .. && uv run querycad build designs/dining-table.json",
+    "model:build": "cd .. && uv run querycad build designs/entryway-bench.json",
     "predev": "npm run model:build",
     "dev": "vite",
+    "dev:ui": "vite",
     "prebuild": "npm run model:build",
     "build": "tsc -b && vite build",
     "lint": "oxlint",

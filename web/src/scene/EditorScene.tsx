@@ -1,6 +1,6 @@
 import { GizmoHelper, GizmoViewport, Html } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { Suspense } from 'react'
+import { memo, Suspense } from 'react'
 import { useEditorStore } from '../state/editor'
 import type { CatalogDesign } from '../types'
 import { CameraRig } from './CameraRig'
@@ -8,7 +8,7 @@ import { FurnitureModel } from './FurnitureModel'
 import { RoomProxy } from './RoomProxy'
 import { StarterSplat } from './StarterSplat'
 
-export function EditorScene({
+export const EditorScene = memo(function EditorScene({
   design,
   onSplatError,
 }: {
@@ -17,6 +17,7 @@ export function EditorScene({
 }) {
   const cameraView = useEditorStore((state) => state.cameraView)
   const layers = useEditorStore((state) => state.layers)
+  const showHelpers = useEditorStore((state) => state.showHelpers)
 
   return (
     <Canvas
@@ -61,12 +62,14 @@ export function EditorScene({
       )}
 
       <CameraRig view={cameraView} />
-      <GizmoHelper alignment="bottom-right" margin={[88, 80]}>
-        <GizmoViewport
-          axisColors={['#ff8f7a', '#83d7a5', '#70a7ff']}
-          labelColor="#e8edf2"
-        />
-      </GizmoHelper>
+      {showHelpers && (
+        <GizmoHelper alignment="bottom-right" margin={[88, 80]}>
+          <GizmoViewport
+            axisColors={['#ff8f7a', '#83d7a5', '#70a7ff']}
+            labelColor="#e8edf2"
+          />
+        </GizmoHelper>
+      )}
     </Canvas>
   )
-}
+})

@@ -17,6 +17,8 @@ another agent from a clean checkout.
    `uv run ruff format --check .`, and `uv run pytest` after a change. For geometry changes, also run
    `uv run querycad build <design.json>` and inspect the reported bounding box and artifact list.
    For viewer changes, run `cd web && npm run check && npm run build`.
+   During iterative geometry work, `uv run querycad preview <design.json>` keeps the selected build
+   and web studio live; it does not replace the final quality gate.
 6. Never commit `.venv/`, `build/`, exports, caches, or editor state. Do commit `uv.lock` whenever
    dependencies change.
 

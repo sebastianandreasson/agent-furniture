@@ -19,6 +19,7 @@ type EditorState = {
   placements: Record<string, Placement>
   transformMode: TransformMode
   snapping: boolean
+  showHelpers: boolean
   cameraView: CameraView
   layers: Record<LayerKey, boolean>
   setActiveDesign: (id: string) => void
@@ -28,6 +29,7 @@ type EditorState = {
   resetPlacement: (id: string) => void
   setTransformMode: (mode: TransformMode) => void
   setSnapping: (enabled: boolean) => void
+  setShowHelpers: (visible: boolean) => void
   setCameraView: (view: CameraView) => void
   toggleLayer: (layer: LayerKey) => void
 }
@@ -39,6 +41,7 @@ export const useEditorStore = create<EditorState>()(
       placements: {},
       transformMode: 'translate',
       snapping: true,
+      showHelpers: true,
       cameraView: 'perspective',
       layers: { splat: true, furniture: true, room: true, grid: true },
       setActiveDesign: (id) => set({ activeDesignId: id }),
@@ -75,6 +78,7 @@ export const useEditorStore = create<EditorState>()(
         })),
       setTransformMode: (transformMode) => set({ transformMode }),
       setSnapping: (snapping) => set({ snapping }),
+      setShowHelpers: (showHelpers) => set({ showHelpers }),
       setCameraView: (cameraView) => set({ cameraView }),
       toggleLayer: (layer) =>
         set((state) => ({
@@ -83,9 +87,10 @@ export const useEditorStore = create<EditorState>()(
     }),
     {
       name: 'querycad-editor-v1',
-      partialize: ({ placements, activeDesignId }) => ({
+      partialize: ({ placements, activeDesignId, showHelpers }) => ({
         placements,
         activeDesignId,
+        showHelpers,
       }),
     },
   ),

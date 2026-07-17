@@ -33,3 +33,25 @@ export type Placement = {
 
 export type TransformMode = 'translate' | 'rotate'
 export type CameraView = 'perspective' | 'top' | 'front' | 'side'
+
+export type ColorTuple = [number, number, number, number]
+
+export type ManifestPart = {
+  partNumber: string
+  description: string
+  material: string
+  quantity: number
+  sizeMm: Vector3Tuple
+  unitVolumeMm3: number
+  colorRgba: ColorTuple
+  placementNames: string[]
+}
+
+export type FurnitureManifest = {
+  schemaVersion: 1
+  name: string
+  model: string
+  units: 'mm'
+  partOccurrences: number
+  parts: ManifestPart[]
+}
