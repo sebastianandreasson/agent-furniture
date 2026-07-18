@@ -8,7 +8,7 @@ from querycad.models.apron_table import ApronTableSpec, build_apron_table
 def test_default_table_geometry_and_bom_quantities() -> None:
     design = build_apron_table("test-table", ApronTableSpec().as_dict())
 
-    design.validate_solids()
+    design.validate()
 
     assert design.overall_size_mm() == pytest.approx((1600.0, 800.0, 750.0))
     assert design.total_occurrences() == 9

@@ -1,15 +1,15 @@
-"""Domain objects shared by all furniture models."""
+"""Validated fabrication metadata and reusable joinery authoring helpers."""
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal
 
-import cadquery as cq
-from OCP.BRepTools import BRepTools
+if TYPE_CHECKING:
+    from querycad.furniture.design import Part, Vector3
 
-Vector3 = tuple[float, float, float]
-Color4 = tuple[float, float, float, float]
+AxisName = Literal["x", "y", "z"]
 
 
 @dataclass(frozen=True)
@@ -76,7 +76,7 @@ class DrillOperation:
     label: str
     kind: str
     face: str
-    view_axes: tuple[str, str]
+    view_axes: tuple[AxisName, AxisName]
     diameter_mm: float
     points: tuple[DrillPoint, ...]
     depth_mm: float | None = None
@@ -84,7 +84,7 @@ class DrillOperation:
     angle_deg: float | None = None
     fastener_code: str | None = None
     counts_fastener: bool = False
-    geometry_mode: str = "marked_only"
+    geometry_mode: Literal["cut", "marked_only"] = "marked_only"
     notes: str = ""
 
     def as_dict(self, part_quantity: int) -> dict[str, Any]:
@@ -112,7 +112,7 @@ class DrillOperation:
 
 @dataclass(frozen=True)
 class JointSpec:
-    """An assembly connection tied to its hardware and source-part drill marks."""
+    """An assembly connection tied to hardware and source-part drill marks."""
 
     joint_id: str
     description: str
@@ -139,85 +139,14 @@ class JointSpec:
 
 
 @dataclass(frozen=True)
-class Placement:
-    """A named occurrence of a local-coordinate part."""
+class JoinerySchedule:
+    """Immutable, self-validating fabrication schedule for one design."""
 
-    name: str
-    translation_mm: Vector3 = (0.0, 0.0, 0.0)
-    rotation_deg: Vector3 = (0.0, 0.0, 0.0)
-
-    def location(self) -> cq.Location:
-        return cq.Location(self.translation_mm, self.rotation_deg)
-
-    def as_dict(self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "translation_mm": list(self.translation_mm),
-            "rotation_deg": list(self.rotation_deg),
-        }
-
-
-@dataclass(frozen=True)
-class Part:
-    """One unique part definition and all of its assembly occurrences."""
-
-    number: str
-    description: str
-    material: str
-    shape: cq.Workplane
-    stock_size_mm: Vector3
-    placements: tuple[Placement, ...]
-    color: Color4 = (0.72, 0.52, 0.30, 1.0)
-
-    @property
-    def quantity(self) -> int:
-        return len(self.placements)
-
-    @property
-    def volume_mm3(self) -> float:
-        return float(self.shape.val().Volume())
-
-
-@dataclass(frozen=True)
-class Design:
-    """A resolved furniture design ready for validation and export."""
-
-    name: str
-    model: str
-    parameters: dict[str, Any]
-    parts: tuple[Part, ...]
-    joinery_status: str = "unspecified"
-    joinery_notes: tuple[str, ...] = ()
+    status: str = "unspecified"
+    notes: tuple[str, ...] = ()
     fasteners: tuple[FastenerSpec, ...] = ()
     drill_operations: tuple[DrillOperation, ...] = ()
     joints: tuple[JointSpec, ...] = ()
-
-    def assembly(self) -> cq.Assembly:
-        assembly = cq.Assembly(name=self.name)
-        for part in self.parts:
-            color = cq.Color(*part.color)
-            for placement in part.placements:
-                assembly.add(
-                    part.shape,
-                    name=placement.name,
-                    color=color,
-                    loc=placement.location(),
-                )
-        return assembly
-
-    def compound(self) -> cq.Compound:
-        return self.assembly().toCompound()
-
-    def overall_size_mm(self) -> Vector3:
-        compound = self.compound()
-        # STL/glTF meshing caches a triangulation whose deflection can inflate later bounds.
-        # Remove that cache before asking OpenCascade for the exact B-rep bounds.
-        BRepTools.Clean_s(compound.wrapped)
-        bounds = compound.BoundingBox()
-        return (float(bounds.xlen), float(bounds.ylen), float(bounds.zlen))
-
-    def total_occurrences(self) -> int:
-        return sum(part.quantity for part in self.parts)
 
     def hardware_quantities(self) -> dict[str, int]:
         quantities = {fastener.code: 0 for fastener in self.fasteners}
@@ -225,26 +154,8 @@ class Design:
             quantities[joint.fastener_code] += joint.quantity
         return quantities
 
-    def validate_solids(self) -> None:
-        if not self.parts:
-            raise ValueError("a design must contain at least one part")
-        names: set[str] = set()
-        numbers: set[str] = set()
-        for part in self.parts:
-            if part.number in numbers:
-                raise ValueError(f"duplicate part number: {part.number}")
-            numbers.add(part.number)
-            if part.quantity < 1:
-                raise ValueError(f"part {part.number} has no placements")
-            shape = part.shape.val()
-            if shape.isNull() or not shape.isValid() or shape.Volume() <= 0:
-                raise ValueError(f"part {part.number} is not a valid solid")
-            for placement in part.placements:
-                if placement.name in names:
-                    raise ValueError(f"duplicate placement name: {placement.name}")
-                names.add(placement.name)
-
-        part_by_number = {part.number: part for part in self.parts}
+    def validate(self, parts: Iterable[Part]) -> None:
+        part_by_number = {part.number: part for part in parts}
         fastener_by_code: dict[str, FastenerSpec] = {}
         for fastener in self.fasteners:
             if not fastener.code.strip():
@@ -255,7 +166,7 @@ class Design:
                 raise ValueError(f"fastener {fastener.code} must have a positive length")
             fastener_by_code[fastener.code] = fastener
 
-        axes = {"x": 0, "y": 1, "z": 2}
+        axes = {"x", "y", "z"}
         operation_by_id: dict[str, DrillOperation] = {}
         counted_hardware = {code: 0 for code in fastener_by_code}
         for operation in self.drill_operations:
@@ -274,6 +185,13 @@ class Design:
             if operation.depth_mm is not None and operation.depth_mm <= 0:
                 raise ValueError(
                     f"drill operation {operation.operation_id} must have a positive depth"
+                )
+            if (
+                operation.countersink_diameter_mm is not None
+                and operation.countersink_diameter_mm <= operation.diameter_mm
+            ):
+                raise ValueError(
+                    f"drill operation {operation.operation_id} has an invalid countersink"
                 )
             if (
                 len(operation.view_axes) != 2
@@ -301,7 +219,10 @@ class Design:
                         f"drill operation {operation.operation_id} has a zero-length drill axis"
                     )
                 for coordinate, limit, axis in zip(
-                    point.position_mm, part.stock_size_mm, ("x", "y", "z"), strict=True
+                    point.position_mm,
+                    part.stock_size_mm,
+                    ("x", "y", "z"),
+                    strict=True,
                 ):
                     if coordinate < -1e-6 or coordinate > limit + 1e-6:
                         raise ValueError(
@@ -346,3 +267,121 @@ class Design:
                 "drill-operation screw counts do not match the joint schedule: "
                 f"drills={counted_hardware}, joints={joint_hardware}"
             )
+
+
+class JoineryPlan:
+    """Authoring helper that derives joint quantities from part occurrences."""
+
+    def __init__(
+        self,
+        quantity_for_part: Callable[[str], int],
+        *,
+        status: str,
+        notes: tuple[str, ...] = (),
+    ) -> None:
+        self._quantity_for_part = quantity_for_part
+        self._status = status
+        self._notes = notes
+        self._fasteners: list[FastenerSpec] = []
+        self._operations: list[DrillOperation] = []
+        self._joints: list[JointSpec] = []
+
+    def add_fasteners(self, *fasteners: FastenerSpec) -> JoineryPlan:
+        self._fasteners.extend(fasteners)
+        return self
+
+    def add_operation(self, operation: DrillOperation) -> JoineryPlan:
+        self._operations.append(operation)
+        return self
+
+    def add_connection(
+        self,
+        *,
+        joint_id: str,
+        description: str,
+        target_part_number: str,
+        operation: DrillOperation,
+        assembly_step: int,
+        notes: str = "",
+    ) -> JoineryPlan:
+        if not operation.counts_fastener or operation.fastener_code is None:
+            raise ValueError("a connection operation must count a named fastener")
+        self.add_operation(operation)
+        self._joints.append(
+            JointSpec(
+                joint_id=joint_id,
+                description=description,
+                source_part_number=operation.part_number,
+                target_part_number=target_part_number,
+                fastener_code=operation.fastener_code,
+                quantity=(len(operation.points) * self._quantity_for_part(operation.part_number)),
+                drill_operation_ids=(operation.operation_id,),
+                assembly_step=assembly_step,
+                notes=notes,
+            )
+        )
+        return self
+
+    def build(self) -> JoinerySchedule:
+        return JoinerySchedule(
+            status=self._status,
+            notes=self._notes,
+            fasteners=tuple(self._fasteners),
+            drill_operations=tuple(self._operations),
+            joints=tuple(self._joints),
+        )
+
+
+def rail_end_pocket_holes(
+    *,
+    operation_id: str,
+    part_number: str,
+    label: str,
+    run_axis: Literal["x", "y"],
+    length: float,
+    levels: tuple[float, ...],
+    setback: float,
+    face: str,
+    bit_diameter: float,
+    angle_deg: float,
+    fastener_code: str,
+    notes: str,
+) -> DrillOperation:
+    """Create jig marks for one or more pocket holes at both ends of a rail."""
+
+    if run_axis == "x":
+        endpoints = (
+            (setback, (-1.0, 0.0, 0.0), "left end"),
+            (length - setback, (1.0, 0.0, 0.0), "right end"),
+        )
+        points = tuple(
+            DrillPoint((position, 0.0, level), axis, point_label)
+            for position, axis, point_label in endpoints
+            for level in levels
+        )
+        view_axes: tuple[AxisName, AxisName] = ("x", "z")
+    else:
+        endpoints = (
+            (setback, (0.0, -1.0, 0.0), "front end"),
+            (length - setback, (0.0, 1.0, 0.0), "back end"),
+        )
+        points = tuple(
+            DrillPoint((0.0, position, level), axis, point_label)
+            for position, axis, point_label in endpoints
+            for level in levels
+        )
+        view_axes = ("y", "z")
+    return DrillOperation(
+        operation_id=operation_id,
+        part_number=part_number,
+        label=label,
+        kind="pocket_hole",
+        face=face,
+        view_axes=view_axes,
+        diameter_mm=bit_diameter,
+        points=points,
+        angle_deg=angle_deg,
+        fastener_code=fastener_code,
+        counts_fastener=True,
+        notes=notes,
+    )

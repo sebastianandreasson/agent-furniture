@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from querycad.core import Design
+from querycad.furniture import Design
 from querycad.registry import build_model
 
 
@@ -35,5 +35,5 @@ def load_design(path: Path) -> Design:
         raise ValueError("parameters must be a JSON object")
 
     design = build_model(model, name, parameters)
-    design.validate_solids()
+    design.validate()
     return design

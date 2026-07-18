@@ -38,7 +38,7 @@ not part of the bench model.
 | Shoe-retaining lip | 18 mm high × 12 mm thick |
 
 Every estimate is exposed on `EntrywayBenchSpec` in
-`src/querycad/models/entryway_bench.py`. The example JSON leaves `parameters` empty so changes to
+`src/querycad/models/entryway_bench/spec.py`. The example JSON leaves `parameters` empty so changes to
 those Python defaults rebuild live; JSON keys can still override individual values for a deliberate
 variant. The most valuable measurements for a second pass are overall length, overall depth,
 floor-to-top-of-wood-frame height, cushion thickness, leg section, and shelf height.
@@ -53,7 +53,12 @@ from sliding off the incline.
 
 ## Fabrication boundary
 
-The current geometry captures appearance and nominal stock dimensions. Shelf and rail members
-overlap where real joints would occur; the angled shelf supports and retaining lip need real joinery.
-Mortises, tenons, dowels, screws, upholstery construction, manufacturing clearances, and structural
-verification are not modeled. Resolve those details before using the exports for fabrication.
+The model publishes a prototype screw schedule, part-local drill centres, and an assembly sequence.
+Shelf-slat clearance/countersink holes are cut in their solids; pocket holes and transfer pilots stay
+marked-only because their exact result depends on the jig, chosen screw, stock, and dry-fit
+orientation. See `JOINERY_AND_DRILLING.md` for those assumptions.
+
+This is still not a fabrication-ready or structurally certified design. Rail intersections are
+nominal connection envelopes rather than modeled mortise-and-tenon joints. Upholstery construction,
+wood movement, manufacturing clearances, load capacity, stability, and the final hardware products
+must be resolved and tested before fabrication.

@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from querycad.core import Design
+from querycad.furniture import Design
 from querycad.models.apron_table import ApronTableSpec, build_apron_table
 from querycad.models.entryway_bench import EntrywayBenchSpec, build_entryway_bench
 

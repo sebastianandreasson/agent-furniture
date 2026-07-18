@@ -47,3 +47,19 @@ Do not claim that generated furniture is structurally certified or fabrication-r
 the CAD kernel accepts it. Clearly surface assumptions about material, loading, joinery, tolerances,
 hardware, and manufacturing method. Preserve exact user requirements in the design specification or
 adjacent documentation.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub for `sebastianandreasson/agent-furniture`. See
+`docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The repository uses the standard five-role triage vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repository with `CONTEXT.md` at the root and decisions in `docs/adr/`. See
+`docs/agents/domain.md`.

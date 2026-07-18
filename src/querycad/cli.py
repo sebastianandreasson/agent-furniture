@@ -8,8 +8,8 @@ import sys
 from pathlib import Path
 
 from querycad.config import load_design
-from querycad.core import Design
 from querycad.export import DEFAULT_FORMATS, SUPPORTED_FORMATS, export_design, write_catalog
+from querycad.furniture import Design
 from querycad.preview import PreviewOptions, run_preview
 from querycad.registry import MODELS
 

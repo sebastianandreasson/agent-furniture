@@ -1,6 +1,7 @@
 # Joinery and drilling contract
 
-QueryCAD treats fabrication guidance as model data, not UI decoration. A `Design` can publish:
+QueryCAD treats fabrication guidance as model data, not UI decoration. A `Design` owns an immutable
+`JoinerySchedule` that can publish:
 
 - `FastenerSpec` records with a stable code, quantity-driving joints, length, head, drive, thread,
   finish, use, product reference, source, and qualification status.
@@ -10,10 +11,12 @@ QueryCAD treats fabrication guidance as model data, not UI decoration. A `Design
 - `JointSpec` records tying source and target parts to a fastener, drill operations, quantity, and
   assembly step.
 
-`Design.validate_solids()` rejects duplicate identifiers, missing references, out-of-stock drill
-points, invalid axes and diameters, and any mismatch between counted drill points and scheduled screw
-quantities. The standard BOM export writes `hardware.csv` when hardware is present, and the manifest
-contains the complete joinery contract consumed by the Materials page.
+`JoineryPlan` derives joint and hardware quantities from drill points × repeated source-part
+occurrences. `Design.validate()` delegates to the schedule, which rejects duplicate identifiers,
+missing references, out-of-stock drill points, invalid axes and diameters, and any mismatch between
+counted drill points and scheduled screw quantities. The standard BOM export writes `hardware.csv`
+when hardware is present, and the manifest contains the complete joinery contract consumed by the
+Materials page.
 
 ## Datum and coordinates
 

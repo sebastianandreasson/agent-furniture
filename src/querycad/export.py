@@ -14,7 +14,7 @@ from typing import Any
 import cadquery as cq
 
 from querycad import __version__
-from querycad.core import Design
+from querycad.furniture import Design
 
 SUPPORTED_FORMATS = frozenset({"step", "glb", "stl", "svg", "bom"})
 DEFAULT_FORMATS = ("step", "glb", "stl", "svg", "bom")
@@ -55,8 +55,8 @@ def _write_bom(design: Design, path: Path) -> None:
 
 
 def _hardware_rows(design: Design) -> list[dict[str, Any]]:
-    quantities = design.hardware_quantities()
-    return [fastener.as_dict(quantities[fastener.code]) for fastener in design.fasteners]
+    quantities = design.joinery.hardware_quantities()
+    return [fastener.as_dict(quantities[fastener.code]) for fastener in design.joinery.fasteners]
 
 
 def _write_hardware_bom(design: Design, path: Path) -> None:
@@ -88,14 +88,14 @@ def _manifest(design: Design, artifacts: Iterable[Path], root: Path) -> dict[str
             for row, part in zip(_bom_rows(design), design.parts, strict=True)
         ],
         "joinery": {
-            "status": design.joinery_status,
-            "notes": list(design.joinery_notes),
+            "status": design.joinery.status,
+            "notes": list(design.joinery.notes),
             "fasteners": _hardware_rows(design),
             "drill_operations": [
                 operation.as_dict(part_quantities[operation.part_number])
-                for operation in design.drill_operations
+                for operation in design.joinery.drill_operations
             ],
-            "joints": [joint.as_dict() for joint in design.joints],
+            "joints": [joint.as_dict() for joint in design.joinery.joints],
         },
         "artifacts": sorted(str(path.relative_to(root)) for path in artifacts),
     }
@@ -179,7 +179,7 @@ def export_design(design: Design, output_dir: Path, formats: Iterable[str]) -> l
     if not requested:
         raise ValueError("at least one export format is required")
 
-    design.validate_solids()
+    design.validate()
     output_dir.mkdir(parents=True, exist_ok=True)
     name = _slug(design.name)
     assembly = design.assembly()
@@ -234,7 +234,7 @@ def export_design(design: Design, output_dir: Path, formats: Iterable[str]) -> l
         path = output_dir / "bom.csv"
         _write_bom(design, path)
         artifacts.append(path)
-        if design.fasteners:
+        if design.joinery.fasteners:
             hardware_path = output_dir / "hardware.csv"
             _write_hardware_bom(design, hardware_path)
             artifacts.append(hardware_path)

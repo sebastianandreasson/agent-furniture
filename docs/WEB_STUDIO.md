@@ -68,6 +68,13 @@ highlights every occurrence of that part while dimming the rest. Hovering a join
 highlights its drilled source part. The print stylesheet omits the model and keeps only the
 fabrication-oriented document.
 
+The React source mirrors these responsibilities instead of concentrating them in the app shell.
+`hooks/useBuildCatalog.ts` owns polling and content deduplication; `studio/` owns the editor panels;
+and `materials/` owns manifest loading, pure inventory projections, part schematic drawing, joinery
+schedules, and assembly highlighting. `App.tsx` only selects the current catalog design and composes
+the active page. Manifest parsing remains one deep, generic adapter in `lib/manifest.ts`, so every UI
+feature receives the same validated artifact contract.
+
 The current online splat is a CORS-enabled sample hosted on GitHub. It proves mixed mesh/splat
 rendering and streaming, but it is deliberately labelled uncalibrated. Replace it with a captured
 apartment asset and a calibrated `ApartmentRoot` transform before using visual alignment for planning.

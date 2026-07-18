@@ -12,7 +12,7 @@ def test_default_bench_geometry_and_bom_quantities() -> None:
     spec = EntrywayBenchSpec()
     design = build_entryway_bench("test-bench", spec.as_dict())
 
-    design.validate_solids()
+    design.validate()
 
     assert design.overall_size_mm() == pytest.approx(
         (
@@ -44,21 +44,21 @@ def test_joinery_schedule_matches_drill_marks_and_hardware_quantities() -> None:
     spec = EntrywayBenchSpec()
     design = build_entryway_bench("test-bench", spec.as_dict())
 
-    design.validate_solids()
+    design.validate()
 
-    assert design.joinery_status == "prototype_not_structurally_certified"
-    assert design.hardware_quantities() == {
+    assert design.joinery.status == "prototype_not_structurally_certified"
+    assert design.joinery.hardware_quantities() == {
         "PH-38-FINE": 36,
         "PH-32-FINE": 12,
         "CSK-4X35": 36,
     }
-    assert len(design.joints) == 11
-    assert len(design.drill_operations) == 14
+    assert len(design.joinery.joints) == 11
+    assert len(design.joinery.drill_operations) == 14
     assert (
         sum(
             len(operation.points)
             * next(part.quantity for part in design.parts if part.number == operation.part_number)
-            for operation in design.drill_operations
+            for operation in design.joinery.drill_operations
             if operation.counts_fastener
         )
         == 84
@@ -76,7 +76,7 @@ def test_shelf_slats_include_documented_clearance_holes() -> None:
     assert parts["SHELF-SLAT-001"].volume_mm3 < solid_slat_volume
     cut_operations = {
         operation.part_number
-        for operation in design.drill_operations
+        for operation in design.joinery.drill_operations
         if operation.geometry_mode == "cut"
     }
     assert cut_operations == {"SHELF-SLAT-001", "EXTENSION-SHELF-SLAT-001"}

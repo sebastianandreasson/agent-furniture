@@ -41,7 +41,7 @@ temporary invalid edit prints a build error but leaves the last successful model
 save again. Stop the watcher with Ctrl-C. Only one watcher can own a design at a time.
 
 For live bench experiments, edit the values on `EntrywayBenchSpec` in
-`src/querycad/models/entryway_bench.py`. The example JSON intentionally has an empty `parameters`
+`src/querycad/models/entryway_bench/spec.py`. The example JSON intentionally has an empty `parameters`
 object, so Python values drive the build directly. Add a key to that JSON only when you deliberately
 want it to override the corresponding Python default for this design variant. The watcher calls out
 successful rebuilds that produced the same GLB revision.
@@ -84,7 +84,9 @@ Ask an agent in this repository for outcomes such as:
 
 The repository contract in `AGENTS.md` tells an agent how to make and verify those changes. A new
 design variant normally needs only a JSON file. A new furniture family gets a model module,
-registry entry, example specification, and tests; see `docs/ADDING_A_MODEL.md`.
+registry entry, example specification, and tests. The public authoring Interface lives in
+`querycad.furniture`; the entryway bench is the canonical modular example and the apron table is the
+small single-file example. See `docs/FURNITURE_ARCHITECTURE.md` and `docs/ADDING_A_MODEL.md`.
 
 ## Commands
 
