@@ -5,7 +5,10 @@ import { AssemblyPreview } from './AssemblyPreview'
 import { HardwarePanel } from './HardwarePanel'
 import { MaterialsHero } from './MaterialsHero'
 import { MaterialsTabs, type MaterialsTab } from './MaterialsTabs'
-import { buildMaterialsViewModel } from './materialsViewModel'
+import {
+  buildMaterialsViewModel,
+  partPreviewContext,
+} from './materialsViewModel'
 import { PartsPanel, type PartsView } from './PartsPanel'
 import { schematicScale } from './schematic'
 import { useAssemblyProgress } from './useAssemblyProgress'
@@ -61,6 +64,9 @@ export function MaterialPreview({
   const activeStep =
     model?.assemblySteps.find((step) => step.number === activeStepNumber) ??
     null
+  const activeStepIndex = model?.assemblySteps.findIndex(
+    (step) => step.number === activeStepNumber,
+  )
   const hoveredPart =
     model?.parts.find((part) => part.partNumber === hoveredPartNumber) ?? null
   const selectedParts = hoveredPart
@@ -69,17 +75,9 @@ export function MaterialPreview({
       ? (activeStep?.parts ?? [])
       : []
   const previewContext = hoveredPart
-    ? {
-        eyebrow: hoveredPart.partNumber,
-        title: hoveredPart.description,
-        detail: `Highlighting ${hoveredPart.quantity} occurrence${hoveredPart.quantity === 1 ? '' : 's'}`,
-      }
+    ? partPreviewContext(hoveredPart)
     : activeTab === 'assembly' && activeStep
-      ? {
-          eyebrow: `Assembly step ${String(activeStep.number).padStart(2, '0')}`,
-          title: activeStep.title,
-          detail: `${activeStep.parts.length} part types · ${activeStep.joints.length} connection groups`,
-        }
+      ? activeStep.previewContext
       : undefined
 
   const selectAdjacentStep = (offset: number) => {
@@ -124,12 +122,12 @@ export function MaterialPreview({
               onSelectDesign={onSelectDesign}
             />
             <div className="mw-workbench">
-              <main className="mw-document-column">
+              <div className="mw-document-column">
                 <MaterialsTabs
                   activeTab={activeTab}
                   stepCount={model.assemblySteps.length}
                   partCount={model.parts.length}
-                  fastenerCount={model.totalFasteners}
+                  fastenerCount={model.hardware.totalFasteners}
                   onChange={setActiveTab}
                 />
                 {activeTab === 'assembly' && (
@@ -160,20 +158,25 @@ export function MaterialPreview({
                 {activeTab === 'hardware' && (
                   <HardwarePanel
                     design={activeDesign}
-                    joinery={manifest.joinery}
+                    hardware={model.hardware}
                   />
                 )}
-              </main>
+              </div>
               <AssemblyPreview
                 design={activeDesign}
                 selectedParts={selectedParts}
                 context={previewContext}
                 navigation={
-                  activeTab === 'assembly' && activeStep
+                  activeTab === 'assembly' &&
+                  activeStep &&
+                  activeStepIndex !== undefined &&
+                  activeStepIndex >= 0
                     ? {
-                        current: activeStep.number,
-                        total: model.assemblySteps.length,
-                        completed: completedSteps,
+                        currentPosition: activeStepIndex + 1,
+                        steps: model.assemblySteps.map((step) => ({
+                          number: step.number,
+                          complete: completedSteps.has(step.number),
+                        })),
                         onPrevious: () => selectAdjacentStep(-1),
                         onNext: () => selectAdjacentStep(1),
                       }

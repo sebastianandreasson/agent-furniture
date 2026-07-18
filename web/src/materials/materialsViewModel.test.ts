@@ -107,17 +107,42 @@ describe('materials view model', () => {
 
     expect(model.materialGroups).toHaveLength(1)
     expect(model.materialGroups[0].occurrences).toBe(3)
-    expect(model.totalFasteners).toBe(4)
+    expect(model.partOccurrences).toBe(3)
+    expect(model.hardware.totalFasteners).toBe(4)
     expect(model.totalSolidVolumeMm3).toBe(1_880_000)
     expect(model.assemblySteps).toHaveLength(1)
     expect(model.assemblySteps[0]).toMatchObject({
       number: 1,
+      position: 1,
       partNumbers: ['RAIL-001', 'LEG-001'],
       notes: ['Dry fit first.'],
+      drillSummary: '1 drill setup · 2 holes',
+      instruction: 'Dry fit first.',
     })
     expect(model.assemblySteps[0].fasteners).toEqual([
       expect.objectContaining({ code: 'PH-38', quantity: 4 }),
     ])
     expect(model.assemblySteps[0].drillOperations).toHaveLength(1)
+  })
+
+  it('keeps real non-contiguous step identifiers separate from display position', () => {
+    const manifest = structuredClone(MANIFEST)
+    manifest.joinery.joints[0].assemblyStep = 2
+    manifest.joinery.joints[1].assemblyStep = 5
+
+    const model = buildMaterialsViewModel(manifest)
+
+    expect(
+      model.assemblySteps.map(({ number, position }) => ({ number, position })),
+    ).toEqual([
+      { number: 2, position: 1 },
+      { number: 5, position: 2 },
+    ])
+    expect(model.assemblySteps[0].previewContext.eyebrow).toBe(
+      'Assembly step 02',
+    )
+    expect(model.assemblySteps[1].previewContext.eyebrow).toBe(
+      'Assembly step 05',
+    )
   })
 })

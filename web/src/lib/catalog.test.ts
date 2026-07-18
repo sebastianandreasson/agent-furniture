@@ -31,4 +31,27 @@ describe('parseCatalog', () => {
       parseCatalog({ schemaVersion: 2, units: 'mm', designs: [] }),
     ).toThrow('Unsupported build catalog')
   })
+
+  it('rejects a design without a valid occurrence count', () => {
+    expect(() =>
+      parseCatalog({
+        schemaVersion: 1,
+        units: 'mm',
+        designs: [
+          {
+            id: 'dining-table',
+            name: 'dining-table',
+            model: 'apron_table',
+            revision: '1234567890abcdef',
+            overallSizeMm: { x: 1600, y: 800, z: 750 },
+            parameters: {},
+            artifacts: {
+              glb: '/dining-table/dining-table.glb',
+              manifest: '/dining-table/manifest.json',
+            },
+          },
+        ],
+      }),
+    ).toThrow('invalid furniture entry')
+  })
 })

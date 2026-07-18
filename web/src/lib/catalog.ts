@@ -21,6 +21,9 @@ function isDesign(value: unknown): value is CatalogDesign {
     typeof value.revision === 'string' &&
     typeof value.artifacts.glb === 'string' &&
     typeof value.artifacts.manifest === 'string' &&
+    typeof value.partOccurrences === 'number' &&
+    Number.isInteger(value.partOccurrences) &&
+    value.partOccurrences >= 0 &&
     typeof value.overallSizeMm.x === 'number' &&
     typeof value.overallSizeMm.y === 'number' &&
     typeof value.overallSizeMm.z === 'number'

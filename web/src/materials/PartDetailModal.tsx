@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type {
   AxisName,
@@ -460,17 +460,57 @@ export function PartDetailModal({
 }) {
   const faces = groupDrillOperations(part, drillOperations)
   const stock = stockFace(part)
+  const dialogRef = useRef<HTMLElement>(null)
+  const previouslyFocused = useRef<HTMLElement | null>(
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null,
+  )
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow
+    const restoreFocusTo = previouslyFocused.current
+    const appShell = document.querySelector<HTMLElement>('.app-shell')
+    const previousAriaHidden = appShell?.getAttribute('aria-hidden')
+    const wasInert = appShell?.hasAttribute('inert') ?? false
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+        return
+      }
+      if (event.key !== 'Tab' || !dialogRef.current) return
+
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => !element.hasAttribute('hidden'))
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
     document.body.style.overflow = 'hidden'
+    appShell?.setAttribute('inert', '')
+    appShell?.setAttribute('aria-hidden', 'true')
     window.addEventListener('keydown', onKeyDown)
     return () => {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', onKeyDown)
+      if (!wasInert) appShell?.removeAttribute('inert')
+      if (previousAriaHidden === null || previousAriaHidden === undefined) {
+        appShell?.removeAttribute('aria-hidden')
+      } else {
+        appShell?.setAttribute('aria-hidden', previousAriaHidden)
+      }
+      restoreFocusTo?.focus()
     }
   }, [onClose])
 
@@ -483,6 +523,7 @@ export function PartDetailModal({
       }}
     >
       <section
+        ref={dialogRef}
         className="part-detail-modal"
         role="dialog"
         aria-modal="true"
@@ -504,7 +545,7 @@ export function PartDetailModal({
             <b aria-hidden="true">×</b>
           </button>
         </header>
-        <main className="part-detail-content">
+        <div className="part-detail-content">
           {faces.map(([key, operations]) => (
             <DetailFace
               key={key}
@@ -513,7 +554,7 @@ export function PartDetailModal({
               axes={key.split('') as [AxisName, AxisName]}
             />
           ))}
-        </main>
+        </div>
         <footer className="part-detail-footer">
           Hole centres are measured from the minimum corner of nominal cut
           stock. Confirm face orientation, hardware, jig settings, tolerances,

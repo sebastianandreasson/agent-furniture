@@ -9,6 +9,7 @@ import {
   type Object3DEventMap,
 } from 'three'
 import type { CatalogDesign, ManifestPart } from '../types'
+import type { PreviewContext } from './materialsViewModel'
 
 type ColorMaterial = Material & {
   color?: Color
@@ -146,15 +147,10 @@ export function AssemblyPreview({
 }: {
   design: CatalogDesign
   selectedParts: ManifestPart[]
-  context?: {
-    eyebrow: string
-    title: string
-    detail: string
-  }
+  context?: PreviewContext
   navigation?: {
-    current: number
-    total: number
-    completed: Set<number>
+    currentPosition: number
+    steps: Array<{ number: number; complete: boolean }>
     onPrevious: () => void
     onNext: () => void
   }
@@ -227,37 +223,35 @@ export function AssemblyPreview({
             <button
               type="button"
               onClick={navigation.onPrevious}
-              disabled={navigation.current <= 1}
+              disabled={navigation.currentPosition <= 1}
               aria-label="Previous assembly step"
             >
               ←
             </button>
             <span>
-              Step {navigation.current} of {navigation.total}
+              Step {navigation.currentPosition} of {navigation.steps.length}
             </span>
             <button
               type="button"
               onClick={navigation.onNext}
-              disabled={navigation.current >= navigation.total}
+              disabled={navigation.currentPosition >= navigation.steps.length}
               aria-label="Next assembly step"
             >
               →
             </button>
           </div>
-          <div
-            className="assembly-progress-bars"
-            aria-label="Assembly progress"
-          >
-            {Array.from(
-              { length: navigation.total },
-              (_, index) => index + 1,
-            ).map((step) => (
-              <i
-                key={step}
-                className={`${step === navigation.current ? 'is-current' : ''} ${navigation.completed.has(step) ? 'is-complete' : ''}`}
+          <ol className="assembly-progress-bars" aria-label="Assembly progress">
+            {navigation.steps.map((step, index) => (
+              <li
+                key={step.number}
+                aria-label={`Step ${step.number}${step.complete ? ', complete' : ''}${index + 1 === navigation.currentPosition ? ', current' : ''}`}
+                aria-current={
+                  index + 1 === navigation.currentPosition ? 'step' : undefined
+                }
+                className={`${index + 1 === navigation.currentPosition ? 'is-current' : ''} ${step.complete ? 'is-complete' : ''}`}
               />
             ))}
-          </div>
+          </ol>
         </div>
       ) : (
         <p className="assembly-preview-footer">

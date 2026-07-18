@@ -2,26 +2,6 @@ import type { CatalogDesign } from '../types'
 import { formatDimension } from './inventory'
 import type { AssemblyStep } from './materialsViewModel'
 
-function drillSummary(step: AssemblyStep) {
-  if (step.drillOperations.length === 0) return 'No drilling marks'
-  const holes = step.drillOperations.reduce(
-    (total, operation) => total + operation.totalHoles,
-    0,
-  )
-  return `${step.drillOperations.length} drill setup${step.drillOperations.length === 1 ? '' : 's'} · ${holes} holes`
-}
-
-function stepNote(step: AssemblyStep) {
-  if (step.notes.length > 0) return step.notes.join(' ')
-  const operationNote = step.drillOperations.find(
-    (operation) => operation.notes,
-  )?.notes
-  return (
-    operationNote ??
-    'Dry-fit the connection, confirm the marked face, and test the setup on matching offcuts.'
-  )
-}
-
 export function AssemblyGuide({
   design,
   steps,
@@ -103,19 +83,20 @@ export function AssemblyGuide({
                           ` · ${formatDimension(fastener.lengthMm)} mm`}
                       </span>
                     ))}
-                    <span>{drillSummary(step)}</span>
+                    <span>{step.drillSummary}</span>
                     {step.parts.map((part) => (
                       <span key={part.partNumber}>
                         {part.partNumber} ×{part.quantity}
                       </span>
                     ))}
                   </span>
-                  <small>{stepNote(step)}</small>
+                  <small>{step.instruction}</small>
                 </span>
               </button>
               <label className="mw-step-done">
                 <input
                   type="checkbox"
+                  aria-label={`Mark step ${step.number}: ${step.title} as complete`}
                   checked={complete}
                   onChange={() => onToggleStep(step.number)}
                 />

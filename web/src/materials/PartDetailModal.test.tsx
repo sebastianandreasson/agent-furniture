@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { useState } from 'react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ManifestDrillOperation, ManifestPart } from '../types'
 import { PartDetailModal } from './PartDetailModal'
 
@@ -118,6 +119,8 @@ const DENSE_RAIL_OPERATIONS: ManifestDrillOperation[] = [
   },
 ]
 
+afterEach(cleanup)
+
 describe('PartDetailModal', () => {
   it('shows edge offsets and center-to-center connection measurements', () => {
     const onClose = vi.fn()
@@ -192,5 +195,45 @@ describe('PartDetailModal', () => {
     fireEvent.focus(markers[4])
     expect(drawing.textContent).toContain('X min 119.3 mm · max 238.7 mm')
     expect(drawing.textContent).toContain('Z min 44 mm · max 18 mm')
+  })
+
+  it('contains focus, hides the background, and restores the opening part', () => {
+    function Harness() {
+      const [open, setOpen] = useState(false)
+      return (
+        <main className="app-shell">
+          <button type="button" onClick={() => setOpen(true)}>
+            Open part detail
+          </button>
+          {open && (
+            <PartDetailModal
+              part={PART}
+              drillOperations={[OPERATION]}
+              onClose={() => setOpen(false)}
+            />
+          )}
+        </main>
+      )
+    }
+
+    render(<Harness />)
+    const opener = screen.getByRole('button', { name: 'Open part detail' })
+    opener.focus()
+    fireEvent.click(opener)
+
+    const shell = document.querySelector('.app-shell')!
+    const close = screen.getByRole('button', { name: 'Close detail' })
+    expect(document.activeElement).toBe(close)
+    expect(shell.hasAttribute('inert')).toBe(true)
+    expect(shell.getAttribute('aria-hidden')).toBe('true')
+
+    fireEvent.keyDown(window, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).not.toBe(close)
+
+    fireEvent.click(close)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(shell.hasAttribute('inert')).toBe(false)
+    expect(shell.hasAttribute('aria-hidden')).toBe(false)
+    expect(document.activeElement).toBe(opener)
   })
 })

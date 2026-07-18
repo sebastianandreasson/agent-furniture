@@ -309,7 +309,9 @@ describe('QueryCAD editor shell', () => {
     await screen.findByTestId('mock-scene')
 
     await user.click(screen.getByRole('button', { name: 'Materials' }))
-    const done = await screen.findByRole('checkbox', { name: 'Done' })
+    const done = await screen.findByRole('checkbox', {
+      name: /Mark step 1:.*as complete/,
+    })
     await user.click(done)
 
     expect((done as HTMLInputElement).checked).toBe(true)
@@ -323,7 +325,7 @@ describe('QueryCAD editor shell', () => {
     await user.click(screen.getByRole('button', { name: 'Materials' }))
     expect(
       (await screen.findByRole('checkbox', {
-        name: 'Done',
+        name: /Mark step 1:.*as complete/,
       })) as HTMLInputElement,
     ).toHaveProperty('checked', true)
   })

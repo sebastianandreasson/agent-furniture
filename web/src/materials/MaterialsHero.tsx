@@ -20,8 +20,8 @@ export function MaterialsHero({
         <h2>Build inventory</h2>
         <div className="mw-summary-chips" aria-label="Build summary">
           <span>
-            <b>{design.partOccurrences}</b>{' '}
-            {design.partOccurrences === 1 ? 'piece' : 'pieces'}
+            <b>{model.partOccurrences}</b>{' '}
+            {model.partOccurrences === 1 ? 'piece' : 'pieces'}
           </span>
           <span>
             <b>{model.parts.length}</b> unique{' '}
@@ -32,8 +32,8 @@ export function MaterialsHero({
             {model.materialGroups.length === 1 ? 'material' : 'materials'}
           </span>
           <span className="is-accent">
-            <b>{model.totalFasteners}</b>{' '}
-            {model.totalFasteners === 1 ? 'fastener' : 'fasteners'}
+            <b>{model.hardware.totalFasteners}</b>{' '}
+            {model.hardware.totalFasteners === 1 ? 'fastener' : 'fasteners'}
           </span>
           <span>
             <b>{formatVolume(model.totalSolidVolumeMm3)}</b> solid volume

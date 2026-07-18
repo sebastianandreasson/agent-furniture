@@ -363,6 +363,35 @@ export function parseManifest(value: unknown): FurnitureManifest {
   }
 }
 
+export function assertManifestMatchesDesign(
+  manifest: FurnitureManifest,
+  design: CatalogDesign,
+): void {
+  const mismatches: string[] = []
+
+  if (manifest.name !== design.name) {
+    mismatches.push(
+      `name is "${manifest.name}" in the manifest but "${design.name}" in the catalog`,
+    )
+  }
+  if (manifest.model !== design.model) {
+    mismatches.push(
+      `model is "${manifest.model}" in the manifest but "${design.model}" in the catalog`,
+    )
+  }
+  if (manifest.partOccurrences !== design.partOccurrences) {
+    mismatches.push(
+      `part count is ${manifest.partOccurrences} in the manifest but ${design.partOccurrences} in the catalog`,
+    )
+  }
+
+  if (mismatches.length > 0) {
+    throw new Error(
+      `The build catalog and manifest for "${design.name}" are out of sync (${mismatches.join('; ')}). Rebuild the furniture exports with QueryCAD, then refresh the build catalog.`,
+    )
+  }
+}
+
 export async function loadManifest(
   design: CatalogDesign,
   signal?: AbortSignal,
@@ -375,5 +404,7 @@ export async function loadManifest(
       `Build manifest unavailable (${response.status}). Rebuild ${design.name}.`,
     )
   }
-  return parseManifest(await response.json())
+  const manifest = parseManifest(await response.json())
+  assertManifestMatchesDesign(manifest, design)
+  return manifest
 }

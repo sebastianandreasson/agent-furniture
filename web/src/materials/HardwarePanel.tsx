@@ -1,18 +1,14 @@
-import type { CatalogDesign, ManifestJoinery } from '../types'
+import type { CatalogDesign } from '../types'
 import { formatDimension } from './inventory'
+import type { MaterialsHardware } from './materialsViewModel'
 
 export function HardwarePanel({
   design,
-  joinery,
+  hardware,
 }: {
   design: CatalogDesign
-  joinery: ManifestJoinery
+  hardware: MaterialsHardware
 }) {
-  const totalFasteners = joinery.fasteners.reduce(
-    (total, fastener) => total + fastener.quantity,
-    0,
-  )
-
   return (
     <section
       id="materials-panel-hardware"
@@ -25,9 +21,10 @@ export function HardwarePanel({
           <p className="eyebrow">Hardware schedule · exact BOM quantities</p>
           <h3>Shopping list</h3>
           <p>
-            {totalFasteners} specified pieces across {joinery.fasteners.length}{' '}
-            hardware {joinery.fasteners.length === 1 ? 'type' : 'types'}.
-            Purchase allowance is not included.
+            {hardware.totalFasteners} specified pieces across{' '}
+            {hardware.fasteners.length} hardware{' '}
+            {hardware.fasteners.length === 1 ? 'type' : 'types'}. Purchase
+            allowance is not included.
           </p>
         </div>
         {design.artifacts.hardware && (
@@ -43,7 +40,7 @@ export function HardwarePanel({
       </header>
 
       <div className="mw-shopping-list">
-        {joinery.fasteners.map((fastener) => (
+        {hardware.fasteners.map((fastener) => (
           <article key={fastener.code}>
             <div className="mw-hardware-quantity">
               <strong>{fastener.quantity}</strong>
@@ -87,11 +84,11 @@ export function HardwarePanel({
         </div>
       </section>
 
-      {(joinery.notes.length > 0 || joinery.status) && (
+      {(hardware.notes.length > 0 || hardware.status) && (
         <aside className="mw-joinery-caveat">
-          <strong>{joinery.status.replaceAll('_', ' ')}</strong>
+          <strong>{hardware.status.replaceAll('_', ' ')}</strong>
           <ul>
-            {joinery.notes.map((note) => (
+            {hardware.notes.map((note) => (
               <li key={note}>{note}</li>
             ))}
           </ul>

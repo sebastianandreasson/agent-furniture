@@ -24,6 +24,7 @@ export type StepFastener = {
 
 export type AssemblyStep = {
   number: number
+  position: number
   title: string
   joints: ManifestJoint[]
   partNumbers: string[]
@@ -31,19 +32,65 @@ export type AssemblyStep = {
   fasteners: StepFastener[]
   drillOperations: ManifestDrillOperation[]
   notes: string[]
+  drillSummary: string
+  instruction: string
+  previewContext: PreviewContext
+}
+
+export type PreviewContext = {
+  eyebrow: string
+  title: string
+  detail: string
+}
+
+export type MaterialsHardware = {
+  fasteners: ManifestFastener[]
+  totalFasteners: number
+  status: string
+  notes: string[]
 }
 
 export type MaterialsViewModel = {
+  partOccurrences: number
   parts: ManifestPart[]
   materialGroups: MaterialGroup[]
   drillOperationsByPart: Map<string, ManifestDrillOperation[]>
   assemblySteps: AssemblyStep[]
   totalSolidVolumeMm3: number
-  totalFasteners: number
+  hardware: MaterialsHardware
 }
 
 function unique<T>(values: T[]) {
   return [...new Set(values)]
+}
+
+function summarizeDrilling(operations: ManifestDrillOperation[]) {
+  if (operations.length === 0) return 'No drilling marks'
+  const holes = operations.reduce(
+    (total, operation) => total + operation.totalHoles,
+    0,
+  )
+  return `${operations.length} drill setup${operations.length === 1 ? '' : 's'} · ${holes} holes`
+}
+
+function assemblyInstruction(
+  notes: string[],
+  operations: ManifestDrillOperation[],
+) {
+  if (notes.length > 0) return notes.join(' ')
+  const operationNote = operations.find((operation) => operation.notes)?.notes
+  return (
+    operationNote ??
+    'Dry-fit the connection, confirm the marked face, and test the setup on matching offcuts.'
+  )
+}
+
+export function partPreviewContext(part: ManifestPart): PreviewContext {
+  return {
+    eyebrow: part.partNumber,
+    title: part.description,
+    detail: `Highlighting ${part.quantity} occurrence${part.quantity === 1 ? '' : 's'}`,
+  }
 }
 
 function buildAssemblySteps(manifest: FurnitureManifest) {
@@ -69,7 +116,7 @@ function buildAssemblySteps(manifest: FurnitureManifest) {
 
   return [...grouped.entries()]
     .sort(([left], [right]) => left - right)
-    .map(([number, joints]): AssemblyStep => {
+    .map(([number, joints], index): AssemblyStep => {
       const partNumbers = unique(
         joints.flatMap((joint) => [
           joint.sourcePartNumber,
@@ -89,24 +136,36 @@ function buildAssemblySteps(manifest: FurnitureManifest) {
         .map((operationId) => operationById.get(operationId))
         .filter((operation): operation is ManifestDrillOperation => !!operation)
 
+      const title =
+        joints.length === 1
+          ? joints[0].description
+          : `${joints[0].description} + ${joints.length - 1} more connection${joints.length === 2 ? '' : 's'}`
+      const parts = partNumbers
+        .map((partNumber) => partByNumber.get(partNumber))
+        .filter((part): part is ManifestPart => !!part)
+      const notes = unique(joints.map((joint) => joint.notes).filter(Boolean))
+
       return {
         number,
-        title:
-          joints.length === 1
-            ? joints[0].description
-            : `${joints[0].description} + ${joints.length - 1} more connection${joints.length === 2 ? '' : 's'}`,
+        position: index + 1,
+        title,
         joints,
         partNumbers,
-        parts: partNumbers
-          .map((partNumber) => partByNumber.get(partNumber))
-          .filter((part): part is ManifestPart => !!part),
+        parts,
         fasteners: [...quantities.entries()].map(([code, quantity]) => ({
           code,
           quantity,
           fastener: fastenerByCode.get(code) ?? null,
         })),
         drillOperations,
-        notes: unique(joints.map((joint) => joint.notes).filter(Boolean)),
+        notes,
+        drillSummary: summarizeDrilling(drillOperations),
+        instruction: assemblyInstruction(notes, drillOperations),
+        previewContext: {
+          eyebrow: `Assembly step ${String(number).padStart(2, '0')}`,
+          title,
+          detail: `${parts.length} part types · ${joints.length} connection groups`,
+        },
       }
     })
 }
@@ -125,6 +184,7 @@ export function buildMaterialsViewModel(
   }
 
   return {
+    partOccurrences: manifest.partOccurrences,
     parts,
     materialGroups: summaries.map((summary) => ({
       ...summary,
@@ -138,9 +198,14 @@ export function buildMaterialsViewModel(
       (total, material) => total + material.volumeMm3,
       0,
     ),
-    totalFasteners: manifest.joinery.fasteners.reduce(
-      (total, fastener) => total + fastener.quantity,
-      0,
-    ),
+    hardware: {
+      fasteners: manifest.joinery.fasteners,
+      totalFasteners: manifest.joinery.fasteners.reduce(
+        (total, fastener) => total + fastener.quantity,
+        0,
+      ),
+      status: manifest.joinery.status,
+      notes: manifest.joinery.notes,
+    },
   }
 }

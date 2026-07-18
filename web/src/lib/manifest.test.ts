@@ -1,5 +1,10 @@
-import { describe, expect, it } from 'vitest'
-import { parseManifest } from './manifest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { CatalogDesign } from '../types'
+import {
+  assertManifestMatchesDesign,
+  loadManifest,
+  parseManifest,
+} from './manifest'
 
 const PART = {
   part_number: 'LEG-001',
@@ -84,16 +89,39 @@ const JOINERY = {
   ],
 }
 
+const DESIGN: CatalogDesign = {
+  id: 'entryway-bench',
+  name: 'entryway-bench',
+  model: 'entryway_bench',
+  revision: 'abc123',
+  overallSizeMm: { x: 1200, y: 338, z: 480 },
+  partOccurrences: 4,
+  parameters: {},
+  artifacts: {
+    manifest: '/entryway-bench/manifest.json',
+    glb: '/entryway-bench/entryway-bench.glb',
+  },
+}
+
+function manifestJson(overrides: Record<string, unknown> = {}) {
+  return {
+    schema_version: 1,
+    name: 'entryway-bench',
+    model: 'entryway_bench',
+    units: 'mm',
+    part_occurrences: 4,
+    parts: [PART],
+    ...overrides,
+  }
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
 describe('parseManifest', () => {
   it('maps the generated part inventory into the web contract', () => {
-    const manifest = parseManifest({
-      schema_version: 1,
-      name: 'entryway-bench',
-      model: 'entryway_bench',
-      units: 'mm',
-      part_occurrences: 4,
-      parts: [PART],
-    })
+    const manifest = parseManifest(manifestJson())
 
     expect(manifest.parts[0]).toEqual({
       partNumber: 'LEG-001',
@@ -113,16 +141,15 @@ describe('parseManifest', () => {
   })
 
   it('rejects a manifest whose inventory does not add up', () => {
-    expect(() =>
-      parseManifest({
-        schema_version: 1,
-        name: 'entryway-bench',
-        model: 'entryway_bench',
-        units: 'mm',
-        part_occurrences: 5,
-        parts: [PART],
-      }),
-    ).toThrow('part count does not match')
+    expect(() => parseManifest(manifestJson({ part_occurrences: 5 }))).toThrow(
+      'part count does not match',
+    )
+  })
+
+  it('rejects manifest units outside the shared millimetre contract', () => {
+    expect(() => parseManifest(manifestJson({ units: 'in' }))).toThrow(
+      'Unsupported build manifest',
+    )
   })
 
   it('maps and cross-checks a generated joinery schedule', () => {
@@ -162,5 +189,50 @@ describe('parseManifest', () => {
         joinery,
       }),
     ).toThrow('hardware totals do not match')
+  })
+
+  it.each([
+    ['name', { name: 'stale-bench' }, 'name is "stale-bench"'],
+    ['model', { model: 'stale_model' }, 'model is "stale_model"'],
+  ])(
+    'rejects a manifest whose %s disagrees with the selected catalog design',
+    (_field, overrides, expectedMessage) => {
+      const manifest = parseManifest(manifestJson(overrides))
+
+      expect(() => assertManifestMatchesDesign(manifest, DESIGN)).toThrow(
+        expectedMessage,
+      )
+    },
+  )
+
+  it('rejects a manifest whose occurrence count disagrees with the catalog', () => {
+    const manifest = parseManifest(manifestJson())
+
+    expect(() =>
+      assertManifestMatchesDesign(manifest, {
+        ...DESIGN,
+        partOccurrences: 5,
+      }),
+    ).toThrow('part count is 4 in the manifest but 5 in the catalog')
+  })
+
+  it('checks compatibility when loading a selected design', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(manifestJson({ model: 'stale_model' })), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    )
+
+    await expect(loadManifest(DESIGN)).rejects.toThrow(
+      'build catalog and manifest for "entryway-bench" are out of sync',
+    )
+    expect(fetch).toHaveBeenCalledWith(
+      '/entryway-bench/manifest.json?revision=abc123',
+      expect.objectContaining({ cache: 'no-store' }),
+    )
   })
 })
