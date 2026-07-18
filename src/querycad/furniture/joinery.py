@@ -294,6 +294,36 @@ class JoineryPlan:
         self._operations.append(operation)
         return self
 
+    def add_joint(
+        self,
+        *,
+        joint_id: str,
+        description: str,
+        source_part_number: str,
+        target_part_number: str,
+        fastener_code: str,
+        quantity: int,
+        drill_operation_ids: tuple[str, ...],
+        assembly_step: int,
+        notes: str = "",
+    ) -> JoineryPlan:
+        """Add an explicitly counted joint for mixed-target repeated parts."""
+
+        self._joints.append(
+            JointSpec(
+                joint_id=joint_id,
+                description=description,
+                source_part_number=source_part_number,
+                target_part_number=target_part_number,
+                fastener_code=fastener_code,
+                quantity=quantity,
+                drill_operation_ids=drill_operation_ids,
+                assembly_step=assembly_step,
+                notes=notes,
+            )
+        )
+        return self
+
     def add_connection(
         self,
         *,

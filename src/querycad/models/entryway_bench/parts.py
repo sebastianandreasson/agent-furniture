@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import cadquery as cq
+
 from querycad.furniture import (
     PartCatalog,
     centered_box,
@@ -18,8 +20,8 @@ LEG = "LEG-001"
 TOP_RAIL_LONG = "TOP-RAIL-LONG-001"
 TOP_RAIL_END = "TOP-RAIL-END-001"
 SHELF_RAIL = "SHELF-RAIL-001"
+SHELF_RAIL_END = "SHELF-RAIL-END-001"
 SHELF_SLAT = "SHELF-SLAT-001"
-EXTENSION_TOP = "EXTENSION-TOP-001"
 EXTENSION_TOP_RAIL_LONG = "EXTENSION-TOP-RAIL-LONG-001"
 EXTENSION_TOP_RAIL_END = "EXTENSION-TOP-RAIL-END-001"
 EXTENSION_SHELF_RAIL = "EXTENSION-SHELF-RAIL-001"
@@ -29,8 +31,27 @@ CUSHION = "CUSHION-001"
 CUSHION_PIPING = "CUSHION-PIPING-001"
 
 PAINT = (0.43, 0.42, 0.39, 1.0)
+PANEL = (0.47, 0.46, 0.43, 1.0)
 FABRIC = (0.78, 0.74, 0.66, 1.0)
 PIPING = (0.68, 0.64, 0.56, 1.0)
+
+
+def _l_shaped_seat_deck(
+    spec: EntrywayBenchSpec,
+    layout: BenchLayout,
+) -> cq.Workplane:
+    """Make the main seat and indented extension as one stable sheet part."""
+
+    main = stock_box(spec.length, spec.depth, spec.seat_base_thickness)
+    extension = stock_box(
+        spec.extension_length,
+        spec.extension_depth,
+        spec.seat_base_thickness,
+    ).translate((layout.extension_center_x, layout.extension_center_y, 0.0))
+    deck = main.union(extension)
+    if spec.seat_base_corner_radius:
+        deck = deck.edges("|Z").fillet(spec.seat_base_corner_radius)
+    return deck
 
 
 def add_main_bench(
@@ -38,21 +59,20 @@ def add_main_bench(
     spec: EntrywayBenchSpec,
     layout: BenchLayout,
 ) -> None:
-    """Add the cushioned main frame and horizontal shoe shelf."""
+    """Add the cushioned main frame and its traditional slatted shoe shelf."""
 
     catalog.define(
         number=SEAT_BASE,
-        description="Rounded seat support board",
-        material=spec.frame_material,
-        shape=stock_box(
-            spec.length,
+        description="One-piece L-shaped seat and extension deck",
+        material=spec.panel_material,
+        shape=_l_shaped_seat_deck(spec, layout),
+        stock_size_mm=(
+            spec.length + spec.extension_length,
             spec.depth,
             spec.seat_base_thickness,
-            corner_radius=spec.seat_base_corner_radius,
         ),
-        stock_size_mm=(spec.length, spec.depth, spec.seat_base_thickness),
-        color=PAINT,
-    ).place("seat_base", (0.0, 0.0, layout.leg_height))
+        color=PANEL,
+    ).place("seat_and_extension_deck", (0.0, 0.0, layout.leg_height))
 
     legs = catalog.define(
         number=LEG,
@@ -87,7 +107,7 @@ def add_main_bench(
 
     end_rails = catalog.define(
         number=TOP_RAIL_END,
-        description="End rail below seat",
+        description="Flush end rail below seat",
         material=spec.frame_material,
         shape=stock_box(
             spec.top_rail_thickness,
@@ -101,8 +121,8 @@ def add_main_bench(
         ),
         color=PAINT,
     )
-    end_rails.place("top_rail_left", (-layout.leg_x, 0.0, layout.top_rail_z))
-    end_rails.place("top_rail_right", (layout.leg_x, 0.0, layout.top_rail_z))
+    end_rails.place("top_rail_left", (-layout.end_rail_x, 0.0, layout.top_rail_z))
+    end_rails.place("top_rail_right", (layout.end_rail_x, 0.0, layout.top_rail_z))
 
     shelf_rails = catalog.define(
         number=SHELF_RAIL,
@@ -123,6 +143,26 @@ def add_main_bench(
     shelf_rail_z = spec.lower_shelf_height - spec.shelf_rail_height
     shelf_rails.place("shelf_rail_lower_front", (0.0, -layout.leg_y, shelf_rail_z))
     shelf_rails.place("shelf_rail_lower_back", (0.0, layout.leg_y, shelf_rail_z))
+
+    catalog.define(
+        number=SHELF_RAIL_END,
+        description="Lower shelf end rail receiving the leg-free extension shelf",
+        material=spec.frame_material,
+        shape=stock_box(
+            spec.shelf_rail_thickness,
+            layout.end_member_depth,
+            spec.shelf_rail_height,
+        ),
+        stock_size_mm=(
+            spec.shelf_rail_thickness,
+            layout.end_member_depth,
+            spec.shelf_rail_height,
+        ),
+        color=PAINT,
+    ).place(
+        "shelf_rail_extension_junction",
+        (layout.junction_shelf_rail_x, 0.0, layout.junction_shelf_rail_z),
+    )
 
     slat_hole_y = layout.main_slat_depth / 2 - layout.main_slat_hole_inset
     shelf_slat_shape = top_countersunk_holes(
@@ -152,7 +192,7 @@ def add_main_bench(
     for index, x in enumerate(layout.main_slat_centers, start=1):
         shelf_slats.place(
             f"shelf_slat_lower_{index:02d}",
-            (x, 0.0, spec.lower_shelf_height - spec.shelf_slat_thickness),
+            (x, 0.0, spec.lower_shelf_height),
         )
 
 
@@ -161,13 +201,9 @@ def add_extension(
     spec: EntrywayBenchSpec,
     layout: BenchLayout,
 ) -> None:
-    """Add the indented top and angled shoe-shelf subassembly."""
+    """Add the clean six-leg extension and its angled slatted shelf."""
 
     legs = catalog.part(LEG)
-    legs.place(
-        "leg_extension_transition_front",
-        (layout.extension_transition_leg_x, layout.extension_front_leg_y, 0.0),
-    )
     legs.place(
         "leg_extension_end_front",
         (layout.extension_far_leg_x, layout.extension_front_leg_y, 0.0),
@@ -177,30 +213,9 @@ def add_extension(
         (layout.extension_far_leg_x, layout.extension_back_leg_y, 0.0),
     )
 
-    catalog.define(
-        number=EXTENSION_TOP,
-        description="Uncovered indented extension top",
-        material=spec.frame_material,
-        shape=stock_box(
-            spec.extension_length,
-            spec.extension_depth,
-            spec.seat_base_thickness,
-            corner_radius=spec.seat_base_corner_radius,
-        ),
-        stock_size_mm=(
-            spec.extension_length,
-            spec.extension_depth,
-            spec.seat_base_thickness,
-        ),
-        color=PAINT,
-    ).place(
-        "extension_top",
-        (layout.extension_center_x, layout.extension_center_y, layout.leg_height),
-    )
-
     top_rails = catalog.define(
         number=EXTENSION_TOP_RAIL_LONG,
-        description="Long rail below extension top",
+        description="Long rail below extension deck",
         material=spec.frame_material,
         shape=stock_box(
             layout.extension_long_member_length,
@@ -233,7 +248,7 @@ def add_extension(
 
     catalog.define(
         number=EXTENSION_TOP_RAIL_END,
-        description="End rail below extension top",
+        description="End rail below extension deck",
         material=spec.frame_material,
         shape=stock_box(
             spec.top_rail_thickness,
@@ -253,7 +268,7 @@ def add_extension(
 
     shelf_rails = catalog.define(
         number=EXTENSION_SHELF_RAIL,
-        description="Angled long rail below indented extension shelf",
+        description="Angled rail below extension shelf slats",
         material=spec.frame_material,
         shape=centered_box(
             layout.extension_long_member_length,
@@ -304,7 +319,7 @@ def add_extension(
     )
     extension_slats = catalog.define(
         number=EXTENSION_SHELF_SLAT,
-        description="Angled front-to-back slat for indented extension shoe shelf",
+        description="Angled front-to-back extension shoe shelf slat",
         material=spec.frame_material,
         shape=extension_slat_shape,
         stock_size_mm=(

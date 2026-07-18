@@ -69,9 +69,11 @@ def test_bench_export_includes_hardware_and_drill_schedule(tmp_path: Path) -> No
 
     assert "hardware.csv" in relative
     assert {item["code"]: item["quantity"] for item in manifest["joinery"]["fasteners"]} == {
-        "PH-38-FINE": 36,
-        "PH-32-FINE": 12,
-        "CSK-4X35": 36,
+        "PH-38-T20": 32,
+        "PH-32-T20": 12,
+        "CSK-4X35-T20": 38,
+        "CB-M6X50": 4,
+        "DOWEL-8X40": 4,
     }
-    assert len(manifest["joinery"]["drill_operations"]) == 14
-    assert len(manifest["joinery"]["joints"]) == 11
+    assert len(manifest["joinery"]["drill_operations"]) == 18
+    assert len(manifest["joinery"]["joints"]) == 18

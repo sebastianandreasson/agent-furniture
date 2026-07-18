@@ -132,7 +132,7 @@ function AssemblyModel({
   }, [scene, selectedPart, snapshots])
 
   return (
-    <Bounds fit clip observe margin={1.25}>
+    <Bounds fit clip observe margin={1.08}>
       <primitive object={scene} />
     </Bounds>
   )

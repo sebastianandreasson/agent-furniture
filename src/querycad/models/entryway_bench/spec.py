@@ -15,12 +15,12 @@ class EntrywayBenchSpec(FurnitureSpec):
 
     model_name: ClassVar[str] = "entryway_bench"
 
-    length: float = 1200.0
-    depth: float = 380.0
-    extension_length: float = 400.0
-    extension_depth: float = 190.0
+    length: float = 1000.0
+    depth: float = 250.0
+    extension_length: float = 600.0
+    extension_depth: float = 150.0
     extension_side: str = "left"
-    frame_height: float = 430.0
+    frame_height: float = 520.0
     seat_base_thickness: float = 22.0
     seat_base_corner_radius: float = 3.0
     leg_size: float = 42.0
@@ -31,11 +31,11 @@ class EntrywayBenchSpec(FurnitureSpec):
     shelf_rail_thickness: float = 24.0
     shelf_slat_thickness: float = 16.0
     shelf_slat_width: float = 30.0
-    shelf_slat_count: int = 12
-    extension_slat_count: int = 4
+    shelf_slat_count: int = 10
+    extension_slat_count: int = 6
     shelf_slat_end_gap: float = 15.0
     extension_shelf_length: float = 260.0
-    extension_shelf_angle_deg: float = 25.0
+    extension_shelf_angle_deg: float = 40.0
     extension_shelf_front_height: float = 90.0
     extension_shelf_stopper_height: float = 18.0
     extension_shelf_stopper_thickness: float = 12.0
@@ -48,18 +48,24 @@ class EntrywayBenchSpec(FurnitureSpec):
     slat_clearance_hole_diameter: float = 4.5
     slat_pilot_hole_diameter: float = 3.0
     slat_countersink_diameter: float = 8.0
-    cushion_length: float = 1140.0
-    cushion_depth: float = 350.0
-    cushion_thickness: float = 70.0
-    cushion_corner_radius: float = 18.0
+    connector_bolt_diameter: float = 6.0
+    connector_bolt_length: float = 50.0
+    connector_clearance_hole_diameter: float = 6.5
+    alignment_dowel_diameter: float = 8.0
+    alignment_dowel_length: float = 40.0
+    cushion_length: float = 990.0
+    cushion_depth: float = 240.0
+    cushion_thickness: float = 30.0
+    cushion_corner_radius: float = 10.0
     cushion_piping_width: float = 5.0
     cushion_piping_height: float = 3.0
     frame_material: str = "warm grey painted beech"
+    panel_material: str = "warm grey painted beech-faced plywood"
     cushion_material: str = "natural linen-look upholstery"
 
     def validate(self) -> None:
         self.validate_basics(
-            text_fields=("frame_material", "cushion_material"),
+            text_fields=("frame_material", "panel_material", "cushion_material"),
             non_numeric_fields=("extension_side",),
             allow_zero=("seat_base_corner_radius",),
         )
@@ -79,9 +85,9 @@ class EntrywayBenchSpec(FurnitureSpec):
         if self.depth <= 2 * self.leg_size:
             raise ValueError("depth is too small for two legs")
         if self.extension_length <= 2 * self.leg_size:
-            raise ValueError("extension_length is too small for its legs")
+            raise ValueError("extension_length is too small for its outer legs")
         if self.extension_depth <= 2 * self.leg_size:
-            raise ValueError("extension_depth is too small for two legs")
+            raise ValueError("extension_depth is too small for two outer legs")
         if self.extension_depth >= self.depth:
             raise ValueError("extension_depth must be smaller than depth to form an indent")
         if self.seat_base_thickness >= self.frame_height:
@@ -178,5 +184,19 @@ class EntrywayBenchSpec(FurnitureSpec):
             raise ValueError("slat_pilot_hole_diameter must be smaller than slat_screw_diameter")
         if self.slat_countersink_diameter >= self.shelf_slat_width:
             raise ValueError("slat_countersink_diameter must fit within a shelf slat")
-        if self.slat_screw_length <= self.shelf_slat_thickness:
-            raise ValueError("slat_screw_length must penetrate beyond the shelf slat")
+        if not (
+            self.shelf_slat_thickness
+            < self.slat_screw_length
+            < self.shelf_slat_thickness + self.shelf_rail_height
+        ):
+            raise ValueError(
+                "slat_screw_length must pass through the slat without exiting its support rail"
+            )
+        if self.connector_clearance_hole_diameter <= self.connector_bolt_diameter:
+            raise ValueError(
+                "connector_clearance_hole_diameter must exceed connector_bolt_diameter"
+            )
+        if self.connector_bolt_length <= self.top_rail_thickness:
+            raise ValueError("connector_bolt_length must reach beyond the extension rail")
+        if self.alignment_dowel_length <= self.top_rail_thickness:
+            raise ValueError("alignment_dowel_length must reach beyond the extension rail")

@@ -16,12 +16,12 @@ from querycad.models.entryway_bench.parts import (
     EXTENSION_SHELF_RAIL,
     EXTENSION_SHELF_SLAT,
     EXTENSION_SHELF_STOPPER,
-    EXTENSION_TOP,
     EXTENSION_TOP_RAIL_END,
     EXTENSION_TOP_RAIL_LONG,
     LEG,
     SEAT_BASE,
     SHELF_RAIL,
+    SHELF_RAIL_END,
     SHELF_SLAT,
     TOP_RAIL_END,
     TOP_RAIL_LONG,
@@ -33,73 +33,98 @@ POCKET_NOTE = (
     "Use a 9.5 mm stepped pocket-hole bit and 15° jig. Datum all dimensions from "
     "the cut-stock minimum corner; verify the jig setting on an offcut."
 )
+JUNCTION_NOTE = (
+    "Dry-fit the extension against the flush main end rail. Use the dowels for alignment, "
+    "then tighten the concealed connector bolt from the extension side. Transfer receiver "
+    "holes in assembly; do not infer certified capacity from the CAD joint."
+)
 
 
-def _hardware(spec: EntrywayBenchSpec) -> tuple[FastenerSpec, ...]:
+def _hardware(
+    spec: EntrywayBenchSpec,
+) -> tuple[FastenerSpec, FastenerSpec, FastenerSpec, FastenerSpec, FastenerSpec]:
     frame_length = f"{spec.frame_pocket_screw_length:g}"
     top_length = f"{spec.top_pocket_screw_length:g}"
     slat_diameter = f"{spec.slat_screw_diameter:g}"
     slat_length = f"{spec.slat_screw_length:g}"
+    connector_diameter = f"{spec.connector_bolt_diameter:g}"
+    connector_length = f"{spec.connector_bolt_length:g}"
+    dowel_diameter = f"{spec.alignment_dowel_diameter:g}"
+    dowel_length = f"{spec.alignment_dowel_length:g}"
     return (
         FastenerSpec(
-            code=f"PH-{frame_length}-FINE",
-            description=f"{frame_length} mm fine-thread zinc pocket-hole screw",
+            code=f"PH-{frame_length}-T20",
+            description=f"{frame_length} mm fine-thread pocket-hole screw",
             length_mm=spec.frame_pocket_screw_length,
-            nominal_size="Kreg fine-thread",
-            head="Maxi-Loc washer head",
-            drive="#2 square",
+            nominal_size="hardwood pocket screw",
+            head="washer head",
+            drive="T20",
             thread="fine, self-tapping",
             finish="indoor zinc",
-            application="Rail-to-leg frame joints in painted beech",
-            manufacturer="Kreg",
-            product_code=(
-                "SML-F150" if spec.frame_pocket_screw_length == 38.0 else "verify-selection"
-            ),
-            source_url=("https://learn.kregtool.com/learn/how-to-select-right-pocket-hole-screw/"),
+            application="Rail-to-leg frame joints",
             notes=(
-                "Prototype selection for 24 mm hardwood rails. Confirm jig collar and screw "
-                "breakthrough on an offcut before drilling finished parts."
+                "Prototype selection for 24 mm hardwood rails. Confirm collar setting, "
+                "withdrawal resistance, and breakthrough on an offcut."
             ),
         ),
         FastenerSpec(
-            code=f"PH-{top_length}-FINE",
-            description=f"{top_length} mm fine-thread zinc pocket-hole screw",
+            code=f"PH-{top_length}-T20",
+            description=f"{top_length} mm fine-thread pocket-hole screw",
             length_mm=spec.top_pocket_screw_length,
-            nominal_size="Kreg fine-thread",
-            head="Maxi-Loc washer head",
-            drive="#2 square",
+            nominal_size="hardwood pocket screw",
+            head="washer head",
+            drive="T20",
             thread="fine, self-tapping",
             finish="indoor zinc",
-            application="Rail-to-seat-board attachment in painted beech",
-            manufacturer="Kreg",
-            product_code=(
-                "SML-F125" if spec.top_pocket_screw_length == 32.0 else "verify-selection"
-            ),
-            source_url=(
-                "https://www.kregtool.com/en/products/pocket-hole-joinery/"
-                "pocket-hole-screws-plugs/pocket-hole-screws-zinc-coated/"
-                "SML-F125-100.html"
-            ),
+            application="Rail-to-L-shaped seat deck attachment",
             notes=(
-                "Prototype selection for the 22 mm seat boards. Check point location from the "
-                "show face and verify no breakthrough on scrap."
+                "Prototype selection for the 22 mm plywood deck. Verify point location and "
+                "no show-face breakthrough on scrap."
             ),
         ),
         FastenerSpec(
-            code=f"CSK-{slat_diameter}X{slat_length}",
-            description=(
-                f"{spec.slat_screw_diameter:.1f} × {slat_length} mm countersunk hardwood screw"
-            ),
+            code=f"CSK-{slat_diameter}X{slat_length}-T20",
+            description=(f"{spec.slat_screw_diameter:.1f} × {slat_length} mm slat screw"),
             length_mm=spec.slat_screw_length,
             nominal_size=f"{spec.slat_screw_diameter:.1f} mm",
             head="90° countersunk",
-            drive="T20 or Pozidriv #2; keep one drive type throughout",
+            drive="T20",
             thread="partial-thread wood screw",
             finish="indoor zinc",
             application="Shelf slats and angled-shelf retaining stop",
             notes=(
-                "Product remains to be selected. The 3.0 mm pilot is a hardwood prototype "
-                "assumption; confirm against the selected screw root diameter and an offcut."
+                "The 3.0 mm pilot is a hardwood prototype assumption; confirm "
+                "against the selected screw root diameter and an offcut."
+            ),
+        ),
+        FastenerSpec(
+            code=f"CB-M{connector_diameter}X{connector_length}",
+            description=(f"M{connector_diameter} × {connector_length} mm concealed connector bolt"),
+            length_mm=spec.connector_bolt_length,
+            nominal_size=f"M{connector_diameter}",
+            head="low-profile furniture connector",
+            drive="hex or Torx to suit selected system",
+            thread="machine thread into matched receiver",
+            finish="indoor zinc",
+            application="Demountable inner ends of extension rails",
+            notes=(
+                "Select a matched bolt and cross-dowel or threaded receiver system, then "
+                "verify edge distances and tightening access in a full-scale joint sample."
+            ),
+        ),
+        FastenerSpec(
+            code=f"DOWEL-{dowel_diameter}X{dowel_length}",
+            description=(f"{dowel_diameter} × {dowel_length} mm fluted hardwood alignment dowel"),
+            length_mm=spec.alignment_dowel_length,
+            nominal_size=f"{dowel_diameter} mm",
+            head="none",
+            drive="none",
+            thread="none",
+            finish="unfinished hardwood",
+            application="Alignment of upper extension rails at the clean junction",
+            notes=(
+                "Use dry at the demountable interface unless the final assembly is intended "
+                "to be permanent. Confirm fit and moisture movement on offcuts."
             ),
         ),
     )
@@ -129,7 +154,7 @@ def _upward_pocket_holes(
             DrillPoint(
                 (length * index / (count + 1), 0.0, rail_height - END_SETBACK),
                 (0.0, 0.0, 1.0),
-                f"top attachment {index}",
+                f"deck attachment {index}",
             )
             for index in range(1, count + 1)
         ),
@@ -140,14 +165,100 @@ def _upward_pocket_holes(
     )
 
 
+def _extension_end_x(
+    layout: BenchLayout,
+    length: float,
+    *,
+    inner: bool,
+    setback: float,
+) -> tuple[float, tuple[float, float, float], str]:
+    inner_is_minimum = layout.extension_sign > 0
+    use_minimum = inner_is_minimum if inner else not inner_is_minimum
+    if use_minimum:
+        return setback, (-1.0, 0.0, 0.0), "inner end" if inner else "outer end"
+    return (
+        length - setback,
+        (1.0, 0.0, 0.0),
+        "inner end" if inner else "outer end",
+    )
+
+
+def _one_end_pocket_holes(
+    *,
+    operation_id: str,
+    part_number: str,
+    label: str,
+    length: float,
+    levels: tuple[float, ...],
+    layout: BenchLayout,
+    bit_diameter: float,
+    angle_deg: float,
+    fastener_code: str,
+) -> DrillOperation:
+    position, axis, end_label = _extension_end_x(layout, length, inner=False, setback=END_SETBACK)
+    return DrillOperation(
+        operation_id=operation_id,
+        part_number=part_number,
+        label=label,
+        kind="pocket_hole",
+        face="inside face",
+        view_axes=("x", "z"),
+        diameter_mm=bit_diameter,
+        points=tuple(DrillPoint((position, 0.0, level), axis, end_label) for level in levels),
+        angle_deg=angle_deg,
+        fastener_code=fastener_code,
+        counts_fastener=True,
+        notes=POCKET_NOTE,
+    )
+
+
+def _inner_end_holes(
+    *,
+    operation_id: str,
+    part_number: str,
+    label: str,
+    length: float,
+    rail_thickness: float,
+    levels: tuple[float, ...],
+    layout: BenchLayout,
+    diameter: float,
+    fastener_code: str,
+    kind: str,
+) -> DrillOperation:
+    position, axis, end_label = _extension_end_x(layout, length, inner=True, setback=0.0)
+    return DrillOperation(
+        operation_id=operation_id,
+        part_number=part_number,
+        label=label,
+        kind=kind,
+        face="inner end",
+        view_axes=("y", "z"),
+        diameter_mm=diameter,
+        points=tuple(
+            DrillPoint(
+                (position, rail_thickness / 2, level),
+                axis,
+                f"{end_label} level {index}",
+            )
+            for index, level in enumerate(levels, start=1)
+        ),
+        depth_mm=None,
+        fastener_code=fastener_code,
+        counts_fastener=True,
+        notes=JUNCTION_NOTE,
+    )
+
+
 def _add_frame_connections(
     plan: JoineryPlan,
     spec: EntrywayBenchSpec,
     layout: BenchLayout,
     frame_fastener: FastenerSpec,
+    connector: FastenerSpec,
+    dowel: FastenerSpec,
 ) -> None:
     top_levels = (END_SETBACK, spec.top_rail_height - END_SETBACK)
-    connections = (
+    standard_connections = (
         (
             "J01-MAIN-LONG-RAILS",
             "Main long top rails to four legs",
@@ -161,7 +272,7 @@ def _add_frame_connections(
         ),
         (
             "J02-MAIN-END-RAILS",
-            "Main end top rails to four legs",
+            "Flush main end rails to four legs",
             "DR-TOP-RAIL-END-ENDS",
             TOP_RAIL_END,
             "Pocket holes at both end-rail ends",
@@ -171,29 +282,18 @@ def _add_frame_connections(
             1,
         ),
         (
-            "J03-EXT-LONG-RAILS",
-            "Extension long top rails to transition and end legs",
-            "DR-EXT-TOP-RAIL-LONG-ENDS",
-            EXTENSION_TOP_RAIL_LONG,
-            "Pocket holes at both extension-rail ends",
-            "x",
-            layout.extension_long_member_length,
-            top_levels,
-            2,
-        ),
-        (
-            "J04-EXT-END-RAIL",
-            "Extension end top rail to its two legs",
+            "J03-EXT-END-RAIL",
+            "Extension end rail to its two outer legs",
             "DR-EXT-TOP-RAIL-END-ENDS",
             EXTENSION_TOP_RAIL_END,
             "Pocket holes at both extension end-rail ends",
             "y",
             layout.extension_end_member_depth,
             top_levels,
-            2,
+            1,
         ),
         (
-            "J05-MAIN-SHELF-RAILS",
+            "J04-MAIN-SHELF-RAILS",
             "Main shelf support rails to four legs",
             "DR-SHELF-RAIL-ENDS",
             SHELF_RAIL,
@@ -201,18 +301,7 @@ def _add_frame_connections(
             "x",
             layout.long_member_length,
             (spec.shelf_rail_height / 2,),
-            3,
-        ),
-        (
-            "J06-EXT-SHELF-RAILS",
-            "Angled shelf support rails to extension legs",
-            "DR-EXT-SHELF-RAIL-ENDS",
-            EXTENSION_SHELF_RAIL,
-            "Single pocket hole at each angled shelf-rail end",
-            "x",
-            layout.extension_long_member_length,
-            (spec.shelf_rail_height / 2,),
-            3,
+            2,
         ),
     )
     for (
@@ -225,28 +314,190 @@ def _add_frame_connections(
         length,
         levels,
         step,
-    ) in connections:
-        operation = rail_end_pocket_holes(
-            operation_id=operation_id,
-            part_number=source_part,
-            label=label,
-            run_axis=run_axis,
-            length=length,
-            levels=levels,
+    ) in standard_connections:
+        plan.add_connection(
+            joint_id=joint_id,
+            description=description,
+            target_part_number=LEG,
+            operation=rail_end_pocket_holes(
+                operation_id=operation_id,
+                part_number=source_part,
+                label=label,
+                run_axis=run_axis,
+                length=length,
+                levels=levels,
+                setback=END_SETBACK,
+                face="inside face",
+                bit_diameter=spec.pocket_hole_bit_diameter,
+                angle_deg=spec.pocket_hole_angle_deg,
+                fastener_code=frame_fastener.code,
+                notes=POCKET_NOTE,
+            ),
+            assembly_step=step,
+        )
+
+    plan.add_connection(
+        joint_id="J05-EXT-TOP-OUTER-ENDS",
+        description="Outer ends of extension top rails to the two outer legs",
+        target_part_number=LEG,
+        operation=_one_end_pocket_holes(
+            operation_id="DR-EXT-TOP-RAIL-OUTER-ENDS",
+            part_number=EXTENSION_TOP_RAIL_LONG,
+            label="Pocket holes at outer ends of extension top rails",
+            length=layout.extension_long_member_length,
+            levels=top_levels,
+            layout=layout,
+            bit_diameter=spec.pocket_hole_bit_diameter,
+            angle_deg=spec.pocket_hole_angle_deg,
+            fastener_code=frame_fastener.code,
+        ),
+        assembly_step=1,
+    )
+    top_connectors = _inner_end_holes(
+        operation_id="DR-EXT-TOP-RAIL-INNER-CONNECTOR",
+        part_number=EXTENSION_TOP_RAIL_LONG,
+        label="Concealed connector clearance at each upper inner rail end",
+        length=layout.extension_long_member_length,
+        rail_thickness=spec.top_rail_thickness,
+        levels=(spec.top_rail_height / 2,),
+        layout=layout,
+        diameter=spec.connector_clearance_hole_diameter,
+        fastener_code=connector.code,
+        kind="connector_clearance",
+    )
+    plan.add_operation(top_connectors)
+    plan.add_joint(
+        joint_id="J06-EXT-TOP-FRONT-JUNCTION",
+        description="Front extension apron to flush main end apron",
+        source_part_number=EXTENSION_TOP_RAIL_LONG,
+        target_part_number=TOP_RAIL_END,
+        fastener_code=connector.code,
+        quantity=1,
+        drill_operation_ids=(top_connectors.operation_id,),
+        assembly_step=3,
+        notes=JUNCTION_NOTE,
+    )
+    plan.add_joint(
+        joint_id="J07-EXT-TOP-BACK-JUNCTION",
+        description="Back extension apron to existing main back leg",
+        source_part_number=EXTENSION_TOP_RAIL_LONG,
+        target_part_number=LEG,
+        fastener_code=connector.code,
+        quantity=1,
+        drill_operation_ids=(top_connectors.operation_id,),
+        assembly_step=3,
+        notes=JUNCTION_NOTE,
+    )
+
+    top_dowels = _inner_end_holes(
+        operation_id="DR-EXT-TOP-RAIL-INNER-DOWELS",
+        part_number=EXTENSION_TOP_RAIL_LONG,
+        label="Alignment dowels at each upper inner rail end",
+        length=layout.extension_long_member_length,
+        rail_thickness=spec.top_rail_thickness,
+        levels=(14.0, spec.top_rail_height - 14.0),
+        layout=layout,
+        diameter=spec.alignment_dowel_diameter,
+        fastener_code=dowel.code,
+        kind="alignment_dowel",
+    )
+    plan.add_operation(top_dowels)
+    plan.add_joint(
+        joint_id="J08-EXT-TOP-FRONT-DOWELS",
+        description="Align front extension apron with main end apron",
+        source_part_number=EXTENSION_TOP_RAIL_LONG,
+        target_part_number=TOP_RAIL_END,
+        fastener_code=dowel.code,
+        quantity=2,
+        drill_operation_ids=(top_dowels.operation_id,),
+        assembly_step=3,
+        notes=JUNCTION_NOTE,
+    )
+    plan.add_joint(
+        joint_id="J09-EXT-TOP-BACK-DOWELS",
+        description="Align back extension apron with main back leg",
+        source_part_number=EXTENSION_TOP_RAIL_LONG,
+        target_part_number=LEG,
+        fastener_code=dowel.code,
+        quantity=2,
+        drill_operation_ids=(top_dowels.operation_id,),
+        assembly_step=3,
+        notes=JUNCTION_NOTE,
+    )
+
+    plan.add_connection(
+        joint_id="J10-EXT-SHELF-OUTER-ENDS",
+        description="Outer ends of angled shelf rails to the two outer legs",
+        target_part_number=LEG,
+        operation=_one_end_pocket_holes(
+            operation_id="DR-EXT-SHELF-RAIL-OUTER-ENDS",
+            part_number=EXTENSION_SHELF_RAIL,
+            label="Pocket hole at outer end of each angled shelf rail",
+            length=layout.extension_long_member_length,
+            levels=(spec.shelf_rail_height / 2,),
+            layout=layout,
+            bit_diameter=spec.pocket_hole_bit_diameter,
+            angle_deg=spec.pocket_hole_angle_deg,
+            fastener_code=frame_fastener.code,
+        ),
+        assembly_step=2,
+    )
+    shelf_connectors = _inner_end_holes(
+        operation_id="DR-EXT-SHELF-RAIL-INNER-CONNECTOR",
+        part_number=EXTENSION_SHELF_RAIL,
+        label="Concealed connector clearance at each angled inner rail end",
+        length=layout.extension_long_member_length,
+        rail_thickness=spec.shelf_rail_thickness,
+        levels=(spec.shelf_rail_height / 2,),
+        layout=layout,
+        diameter=spec.connector_clearance_hole_diameter,
+        fastener_code=connector.code,
+        kind="connector_clearance",
+    )
+    plan.add_operation(shelf_connectors)
+    plan.add_joint(
+        joint_id="J11-EXT-SHELF-FRONT-JUNCTION",
+        description="Front angled shelf rail to the main lower-shelf end rail",
+        source_part_number=EXTENSION_SHELF_RAIL,
+        target_part_number=SHELF_RAIL_END,
+        fastener_code=connector.code,
+        quantity=1,
+        drill_operation_ids=(shelf_connectors.operation_id,),
+        assembly_step=3,
+        notes=JUNCTION_NOTE,
+    )
+    plan.add_joint(
+        joint_id="J12-EXT-SHELF-BACK-JUNCTION",
+        description="Back angled shelf rail to existing main back leg",
+        source_part_number=EXTENSION_SHELF_RAIL,
+        target_part_number=LEG,
+        fastener_code=connector.code,
+        quantity=1,
+        drill_operation_ids=(shelf_connectors.operation_id,),
+        assembly_step=3,
+        notes=JUNCTION_NOTE,
+    )
+
+    plan.add_connection(
+        joint_id="J13-LOWER-SHELF-END-RAIL",
+        description="Lower shelf end rail to the two main legs at the extension side",
+        target_part_number=LEG,
+        operation=rail_end_pocket_holes(
+            operation_id="DR-SHELF-RAIL-END-ENDS",
+            part_number=SHELF_RAIL_END,
+            label="Pocket holes at both lower shelf end-rail ends",
+            run_axis="y",
+            length=layout.end_member_depth,
+            levels=(spec.shelf_rail_height / 2,),
             setback=END_SETBACK,
             face="inside face",
             bit_diameter=spec.pocket_hole_bit_diameter,
             angle_deg=spec.pocket_hole_angle_deg,
             fastener_code=frame_fastener.code,
             notes=POCKET_NOTE,
-        )
-        plan.add_connection(
-            joint_id=joint_id,
-            description=description,
-            target_part_number=LEG,
-            operation=operation,
-            assembly_step=step,
-        )
+        ),
+        assembly_step=2,
+    )
 
 
 def _add_top_connections(
@@ -256,13 +507,13 @@ def _add_top_connections(
     top_fastener: FastenerSpec,
 ) -> None:
     plan.add_connection(
-        joint_id="J07-MAIN-SEAT",
-        description="Main seat support board to long top rails",
+        joint_id="J14-MAIN-DECK",
+        description="One-piece L-shaped deck to main long rails",
         target_part_number=SEAT_BASE,
         operation=_upward_pocket_holes(
-            operation_id="DR-TOP-RAIL-LONG-SEAT",
+            operation_id="DR-TOP-RAIL-LONG-DECK",
             part_number=TOP_RAIL_LONG,
-            label="Upward pocket holes for the main seat board",
+            label="Upward pocket holes for the L-shaped deck",
             length=layout.long_member_length,
             count=4,
             rail_height=spec.top_rail_height,
@@ -273,13 +524,13 @@ def _add_top_connections(
         assembly_step=4,
     )
     plan.add_connection(
-        joint_id="J08-EXTENSION-TOP",
-        description="Uncovered extension top to its long rails",
-        target_part_number=EXTENSION_TOP,
+        joint_id="J15-EXTENSION-DECK",
+        description="Extension wing of L-shaped deck to extension rails",
+        target_part_number=SEAT_BASE,
         operation=_upward_pocket_holes(
-            operation_id="DR-EXT-TOP-RAIL-SEAT",
+            operation_id="DR-EXT-TOP-RAIL-DECK",
             part_number=EXTENSION_TOP_RAIL_LONG,
-            label="Upward pocket holes for the extension top",
+            label="Upward pocket holes for the extension wing",
             length=layout.extension_long_member_length,
             count=2,
             rail_height=spec.top_rail_height,
@@ -334,7 +585,7 @@ def _add_shelf_connections(
         notes="Drill clearance and countersink from the show face.",
     )
     plan.add_connection(
-        joint_id="J09-MAIN-SHELF-SLATS",
+        joint_id="J16-MAIN-SHELF-SLATS",
         description="Main shelf slats to front and back support rails",
         target_part_number=SHELF_RAIL,
         operation=main_clearance,
@@ -373,7 +624,7 @@ def _add_shelf_connections(
         notes="Drill clearance and countersink from the show face.",
     )
     plan.add_connection(
-        joint_id="J10-EXT-SHELF-SLATS",
+        joint_id="J17-EXT-SHELF-SLATS",
         description="Angled shelf slats to both support rails",
         target_part_number=EXTENSION_SHELF_RAIL,
         operation=extension_clearance,
@@ -411,7 +662,7 @@ def _add_shelf_connections(
         ),
     )
     plan.add_connection(
-        joint_id="J11-SHOE-STOP",
+        joint_id="J18-SHOE-STOP",
         description="Angled shelf shoe stop to the front of each slat",
         target_part_number=EXTENSION_SHELF_SLAT,
         operation=stopper_clearance,
@@ -429,7 +680,7 @@ def _add_transfer_pilots(
         DrillOperation(
             operation_id="DR-SHELF-RAIL-PILOTS",
             part_number=SHELF_RAIL,
-            label="Hardwood pilot holes receiving main shelf-slat screws",
+            label="Hardwood pilots receiving main shelf-slat screws",
             kind="pilot",
             face="top face",
             view_axes=("x", "y"),
@@ -455,7 +706,7 @@ def _add_transfer_pilots(
         DrillOperation(
             operation_id="DR-EXT-SHELF-RAIL-PILOTS",
             part_number=EXTENSION_SHELF_RAIL,
-            label="Hardwood pilot holes receiving angled shelf-slat screws",
+            label="Hardwood pilots receiving angled shelf-slat screws",
             kind="pilot",
             face="top face",
             view_axes=("x", "y"),
@@ -513,20 +764,22 @@ def build_joinery_schedule(
 ) -> JoinerySchedule:
     """Build a count-safe schedule from the same part catalog used for geometry."""
 
-    frame_fastener, top_fastener, slat_fastener = _hardware(spec)
+    frame_fastener, top_fastener, slat_fastener, connector, dowel = _hardware(spec)
     plan = JoineryPlan(
         catalog.quantity,
         status="prototype_not_structurally_certified",
         notes=(
-            "Indoor painted-beech prototype based on nominal stock sizes; no design loads "
-            "have been certified.",
-            "Confirm material species, moisture, screw product, edge distances, and jig "
-            "settings on offcuts before fabrication.",
-            "Pocket locations are jig marks, while shelf-slat clearance holes are cut into "
-            "the CAD.",
+            "Indoor six-leg prototype with a one-piece plywood deck; no design loads have "
+            "been certified.",
+            "The removed transition leg transfers seat load through the flush apron joint "
+            "and lower-shelf load into the main lower-shelf end rail. Load-test both paths "
+            "before use.",
+            "Confirm material grades, connector system, moisture, edge distances, pilots, "
+            "and jig settings on full-scale offcuts before fabrication.",
+            "Pocket and connector locations are jig marks; slat clearance holes are cut CAD.",
         ),
-    ).add_fasteners(frame_fastener, top_fastener, slat_fastener)
-    _add_frame_connections(plan, spec, layout, frame_fastener)
+    ).add_fasteners(frame_fastener, top_fastener, slat_fastener, connector, dowel)
+    _add_frame_connections(plan, spec, layout, frame_fastener, connector, dowel)
     _add_top_connections(plan, spec, layout, top_fastener)
     _add_shelf_connections(plan, spec, layout, slat_fastener)
     _add_transfer_pilots(plan, spec, layout, slat_fastener)
