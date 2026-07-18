@@ -128,6 +128,7 @@ export function PartSchematic({
   onHover,
   onOpen,
   drillOperations,
+  showCoordinates = true,
 }: {
   part: ManifestPart
   scale: number
@@ -136,6 +137,7 @@ export function PartSchematic({
   onHover: (partNumber: string | null) => void
   onOpen: (partNumber: string) => void
   drillOperations: ManifestDrillOperation[]
+  showCoordinates?: boolean
 }) {
   const { length, width, thickness } = stockFace(part)
   const faceGroups = groupDrillOperations(part, drillOperations)
@@ -188,7 +190,7 @@ export function PartSchematic({
               {operationSpecification(operation)} · {operation.pointsPerPart}
               /part
             </strong>
-            <small>{coordinateSummary(operation)}</small>
+            {showCoordinates && <small>{coordinateSummary(operation)}</small>}
           </div>
         ))}
         {drillOperations.length === 0 && (

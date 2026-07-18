@@ -55,10 +55,10 @@ function belongsToPart(
 
 function AssemblyModel({
   design,
-  selectedPart,
+  selectedParts,
 }: {
   design: CatalogDesign
-  selectedPart: ManifestPart | null
+  selectedParts: ManifestPart[]
 }) {
   const source = `${design.artifacts.glb}?revision=${design.revision}`
   const { scene: sourceScene } = useGLTF(source)
@@ -91,7 +91,7 @@ function AssemblyModel({
   )
 
   useEffect(() => {
-    const names = new Set(selectedPart?.placementNames ?? [])
+    const names = new Set(selectedParts.flatMap((part) => part.placementNames))
     const filtering = names.size > 0
     scene.traverse((object) => {
       if (!(object instanceof Mesh)) return
@@ -129,7 +129,7 @@ function AssemblyModel({
         material.needsUpdate = true
       }
     })
-  }, [scene, selectedPart, snapshots])
+  }, [scene, selectedParts, snapshots])
 
   return (
     <Bounds fit clip observe margin={1.08}>
@@ -140,10 +140,24 @@ function AssemblyModel({
 
 export function AssemblyPreview({
   design,
-  selectedPart,
+  selectedParts,
+  context,
+  navigation,
 }: {
   design: CatalogDesign
-  selectedPart: ManifestPart | null
+  selectedParts: ManifestPart[]
+  context?: {
+    eyebrow: string
+    title: string
+    detail: string
+  }
+  navigation?: {
+    current: number
+    total: number
+    completed: Set<number>
+    onPrevious: () => void
+    onNext: () => void
+  }
 }) {
   return (
     <aside
@@ -179,7 +193,7 @@ export function AssemblyPreview({
               </Html>
             }
           >
-            <AssemblyModel design={design} selectedPart={selectedPart} />
+            <AssemblyModel design={design} selectedParts={selectedParts} />
           </Suspense>
           <OrbitControls
             makeDefault
@@ -192,11 +206,11 @@ export function AssemblyPreview({
         </Canvas>
         <div className="assembly-preview-grid" aria-hidden="true" />
         <div className="assembly-preview-hint">
-          {selectedPart ? (
+          {context ? (
             <>
-              <span>{selectedPart.partNumber}</span>
-              <strong>{selectedPart.description}</strong>
-              <small>Highlighting {selectedPart.quantity} occurrences</small>
+              <span>{context.eyebrow}</span>
+              <strong>{context.title}</strong>
+              <small>{context.detail}</small>
             </>
           ) : (
             <>
@@ -207,9 +221,49 @@ export function AssemblyPreview({
           )}
         </div>
       </div>
-      <p className="assembly-preview-footer">
-        Hover or keyboard-focus a part card to isolate every matching placement.
-      </p>
+      {navigation ? (
+        <div className="assembly-preview-navigation">
+          <div>
+            <button
+              type="button"
+              onClick={navigation.onPrevious}
+              disabled={navigation.current <= 1}
+              aria-label="Previous assembly step"
+            >
+              ←
+            </button>
+            <span>
+              Step {navigation.current} of {navigation.total}
+            </span>
+            <button
+              type="button"
+              onClick={navigation.onNext}
+              disabled={navigation.current >= navigation.total}
+              aria-label="Next assembly step"
+            >
+              →
+            </button>
+          </div>
+          <div
+            className="assembly-progress-bars"
+            aria-label="Assembly progress"
+          >
+            {Array.from(
+              { length: navigation.total },
+              (_, index) => index + 1,
+            ).map((step) => (
+              <i
+                key={step}
+                className={`${step === navigation.current ? 'is-current' : ''} ${navigation.completed.has(step) ? 'is-complete' : ''}`}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="assembly-preview-footer">
+          Hover or keyboard-focus a part to isolate every matching placement.
+        </p>
+      )}
     </aside>
   )
 }

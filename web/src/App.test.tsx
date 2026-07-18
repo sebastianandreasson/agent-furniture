@@ -180,12 +180,12 @@ vi.mock('./lib/manifest', () => ({
 }))
 vi.mock('./materials/AssemblyPreview', () => ({
   AssemblyPreview: ({
-    selectedPart,
+    selectedParts,
   }: {
-    selectedPart: { partNumber: string } | null
+    selectedParts: Array<{ partNumber: string }>
   }) => (
     <div data-testid="mock-assembly-preview">
-      {selectedPart?.partNumber ?? 'all parts'}
+      {selectedParts.map((part) => part.partNumber).join(', ') || 'all parts'}
     </div>
   ),
 }))
@@ -261,18 +261,18 @@ describe('QueryCAD editor shell', () => {
     await user.click(screen.getByRole('button', { name: 'Materials' }))
 
     expect(
-      await screen.findByRole('heading', { name: 'Parts to put together' }),
+      await screen.findByRole('heading', { name: 'Build it in 1 step' }),
     ).toBeTruthy()
-    expect(screen.getByRole('row', { name: /LEG-001.*×4/ })).toBeTruthy()
+    expect(screen.getByLabelText('Build summary').textContent).toContain(
+      '9 pieces',
+    )
     expect(
-      screen.getByText('9', { selector: '.inventory-summary strong' }),
+      screen.getByRole('tab', { name: /Assembly guide.*1 step/ }),
     ).toBeTruthy()
+
+    await user.click(screen.getByRole('tab', { name: /Parts & cut list.*3/ }))
     expect(
-      screen.getByText('2', { selector: '.inventory-summary strong' }),
-    ).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Part schematic' })).toBeTruthy()
-    expect(
-      screen.getByRole('heading', { name: '2 screws specified' }),
+      screen.getByRole('heading', { name: 'Every part, by material' }),
     ).toBeTruthy()
     expect(screen.getByText('Ø9.5 · jig depth · 15° · 2/part')).toBeTruthy()
     expect(screen.getAllByRole('img', { name: /quantity/ })).toHaveLength(3)
@@ -286,12 +286,46 @@ describe('QueryCAD editor shell', () => {
       'LEG-001',
     )
 
-    await user.click(screen.getByRole('button', { name: 'Print / save PDF' }))
+    await user.click(screen.getByRole('button', { name: 'Print / PDF' }))
     expect(print).toHaveBeenCalledOnce()
+
+    await user.click(screen.getByRole('button', { name: 'Cut list' }))
+    expect(
+      screen.getByRole('button', { name: /LEG-001.*Square table leg.*×4/ }),
+    ).toBeTruthy()
+
+    await user.click(screen.getByRole('tab', { name: /Hardware.*2 fasteners/ }))
+    expect(screen.getByRole('heading', { name: 'Shopping list' })).toBeTruthy()
+    expect(screen.getByText('PH-32-FINE')).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Studio' }))
     expect(await screen.findByTestId('mock-scene')).toBeTruthy()
     print.mockRestore()
+  })
+
+  it('persists assembly checklist progress for a design revision', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByTestId('mock-scene')
+
+    await user.click(screen.getByRole('button', { name: 'Materials' }))
+    const done = await screen.findByRole('checkbox', { name: 'Done' })
+    await user.click(done)
+
+    expect((done as HTMLInputElement).checked).toBe(true)
+    expect(
+      localStorage.getItem(
+        'querycad:assembly-progress:dining-table:1234567890abcdef',
+      ),
+    ).toBe('[1]')
+
+    await user.click(screen.getByRole('button', { name: 'Studio' }))
+    await user.click(screen.getByRole('button', { name: 'Materials' }))
+    expect(
+      (await screen.findByRole('checkbox', {
+        name: 'Done',
+      })) as HTMLInputElement,
+    ).toHaveProperty('checked', true)
   })
 
   it('does not rerender the 3D scene when catalog polling finds no changes', async () => {
