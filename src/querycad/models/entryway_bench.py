@@ -8,7 +8,15 @@ from typing import Any
 
 import cadquery as cq
 
-from querycad.core import Design, Part, Placement
+from querycad.core import (
+    Design,
+    DrillOperation,
+    DrillPoint,
+    FastenerSpec,
+    JointSpec,
+    Part,
+    Placement,
+)
 
 
 @dataclass(frozen=True)
@@ -39,6 +47,15 @@ class EntrywayBenchSpec:
     extension_shelf_front_height: float = 90.0
     extension_shelf_stopper_height: float = 18.0
     extension_shelf_stopper_thickness: float = 12.0
+    frame_pocket_screw_length: float = 38.0
+    top_pocket_screw_length: float = 32.0
+    pocket_hole_bit_diameter: float = 9.5
+    pocket_hole_angle_deg: float = 15.0
+    slat_screw_diameter: float = 4.0
+    slat_screw_length: float = 35.0
+    slat_clearance_hole_diameter: float = 4.5
+    slat_pilot_hole_diameter: float = 3.0
+    slat_countersink_diameter: float = 8.0
     cushion_length: float = 1140.0
     cushion_depth: float = 350.0
     cushion_thickness: float = 70.0
@@ -204,6 +221,16 @@ class EntrywayBenchSpec:
             raise ValueError(
                 "extension shelf stopper collides with the top rails; reduce its height"
             )
+        if self.pocket_hole_bit_diameter >= min(self.top_rail_thickness, self.shelf_rail_thickness):
+            raise ValueError("pocket_hole_bit_diameter must fit within the support rails")
+        if self.slat_clearance_hole_diameter <= self.slat_screw_diameter:
+            raise ValueError("slat_clearance_hole_diameter must exceed slat_screw_diameter")
+        if self.slat_pilot_hole_diameter >= self.slat_screw_diameter:
+            raise ValueError("slat_pilot_hole_diameter must be smaller than slat_screw_diameter")
+        if self.slat_countersink_diameter >= self.shelf_slat_width:
+            raise ValueError("slat_countersink_diameter must fit within a shelf slat")
+        if self.slat_screw_length <= self.shelf_slat_thickness:
+            raise ValueError("slat_screw_length must penetrate beyond the shelf slat")
 
 
 def _prism(
@@ -245,6 +272,23 @@ def _rounded_ring(
         (0.0, 0.0, -1.0)
     )
     return outer.cut(inner)
+
+
+def _top_countersunk_holes(
+    shape: cq.Workplane,
+    points_xy: tuple[tuple[float, float], ...],
+    diameter: float,
+    countersink_diameter: float,
+    depth: float,
+) -> cq.Workplane:
+    """Cut documented top-face clearance holes into a local-coordinate part."""
+
+    return (
+        shape.faces(">Z")
+        .workplane()
+        .pushPoints(points_xy)
+        .cskHole(diameter, countersink_diameter, 90.0, depth=depth)
+    )
 
 
 def build_entryway_bench(name: str, parameters: dict[str, Any]) -> Design:
@@ -422,11 +466,20 @@ def build_entryway_bench(name: str, parameters: dict[str, Any]) -> Design:
     slat_pitch = (usable_slat_span - spec.shelf_slat_width) / (spec.shelf_slat_count - 1)
     first_slat_x = -usable_slat_span / 2 + spec.shelf_slat_width / 2
     slat_depth = 2 * leg_y
+    main_slat_hole_inset = spec.shelf_rail_thickness / 4
+    main_slat_hole_y = slat_depth / 2 - main_slat_hole_inset
+    shelf_slat_shape = _top_countersunk_holes(
+        _prism(spec.shelf_slat_width, slat_depth, spec.shelf_slat_thickness, 2.0),
+        ((0.0, -main_slat_hole_y), (0.0, main_slat_hole_y)),
+        spec.slat_clearance_hole_diameter,
+        spec.slat_countersink_diameter,
+        spec.shelf_slat_thickness,
+    )
     shelf_slat = Part(
         number="SHELF-SLAT-001",
         description="Front-to-back shoe shelf slat",
         material=spec.frame_material,
-        shape=_prism(spec.shelf_slat_width, slat_depth, spec.shelf_slat_thickness, 2.0),
+        shape=shelf_slat_shape,
         stock_size_mm=(
             spec.shelf_slat_width,
             slat_depth,
@@ -563,16 +616,29 @@ def build_entryway_bench(name: str, parameters: dict[str, Any]) -> Design:
     extension_first_slat_x = (
         extension_rail_center_x - extension_usable_slat_span / 2 + spec.shelf_slat_width / 2
     )
-    extension_shelf_slat = Part(
-        number="EXTENSION-SHELF-SLAT-001",
-        description="Angled front-to-back slat for indented extension shoe shelf",
-        material=spec.frame_material,
-        shape=_centered_prism(
+    extension_front_screw_y = (
+        extension_front_rail_contact_y - extension_shelf_center_y
+    ) / extension_shelf_cos
+    extension_back_screw_y = (
+        extension_back_rail_contact_y - extension_shelf_center_y
+    ) / extension_shelf_cos
+    extension_shelf_slat_shape = _top_countersunk_holes(
+        _centered_prism(
             spec.shelf_slat_width,
             spec.extension_shelf_length,
             spec.shelf_slat_thickness,
             2.0,
         ),
+        ((0.0, extension_front_screw_y), (0.0, extension_back_screw_y)),
+        spec.slat_clearance_hole_diameter,
+        spec.slat_countersink_diameter,
+        spec.shelf_slat_thickness,
+    )
+    extension_shelf_slat = Part(
+        number="EXTENSION-SHELF-SLAT-001",
+        description="Angled front-to-back slat for indented extension shoe shelf",
+        material=spec.frame_material,
+        shape=extension_shelf_slat_shape,
         stock_size_mm=(
             spec.shelf_slat_width,
             spec.extension_shelf_length,
@@ -671,6 +737,493 @@ def build_entryway_bench(name: str, parameters: dict[str, Any]) -> Design:
         color=piping,
     )
 
+    frame_pocket_screw = FastenerSpec(
+        code="PH-38-FINE",
+        description="38 mm fine-thread zinc pocket-hole screw",
+        length_mm=spec.frame_pocket_screw_length,
+        nominal_size="Kreg fine-thread",
+        head="Maxi-Loc washer head",
+        drive="#2 square",
+        thread="fine, self-tapping",
+        finish="indoor zinc",
+        application="Rail-to-leg frame joints in painted beech",
+        manufacturer="Kreg",
+        product_code="SML-F150",
+        source_url="https://learn.kregtool.com/learn/how-to-select-right-pocket-hole-screw/",
+        notes=(
+            "Prototype selection for 24 mm hardwood rails. Confirm jig collar and screw "
+            "breakthrough on an offcut before drilling finished parts."
+        ),
+    )
+    top_pocket_screw = FastenerSpec(
+        code="PH-32-FINE",
+        description="32 mm fine-thread zinc pocket-hole screw",
+        length_mm=spec.top_pocket_screw_length,
+        nominal_size="Kreg fine-thread",
+        head="Maxi-Loc washer head",
+        drive="#2 square",
+        thread="fine, self-tapping",
+        finish="indoor zinc",
+        application="Rail-to-seat-board attachment in painted beech",
+        manufacturer="Kreg",
+        product_code="SML-F125",
+        source_url=(
+            "https://www.kregtool.com/en/products/pocket-hole-joinery/"
+            "pocket-hole-screws-plugs/pocket-hole-screws-zinc-coated/SML-F125-100.html"
+        ),
+        notes=(
+            "Prototype selection for the 22 mm seat boards. Check point location from the "
+            "show face and verify no breakthrough on scrap."
+        ),
+    )
+    slat_screw = FastenerSpec(
+        code="CSK-4X35",
+        description="4.0 × 35 mm countersunk hardwood screw",
+        length_mm=spec.slat_screw_length,
+        nominal_size=f"{spec.slat_screw_diameter:.1f} mm",
+        head="90° countersunk",
+        drive="T20 or Pozidriv #2; keep one drive type throughout",
+        thread="partial-thread wood screw",
+        finish="indoor zinc",
+        application="Shelf slats and angled-shelf retaining stop",
+        notes=(
+            "Product remains to be selected. The 3.0 mm pilot is a hardwood prototype "
+            "assumption; confirm against the selected screw root diameter and an offcut."
+        ),
+    )
+
+    end_setback = 18.0
+    top_rail_hole_levels = (18.0, spec.top_rail_height - 18.0)
+
+    def x_end_points(length: float, levels: tuple[float, ...]) -> tuple[DrillPoint, ...]:
+        return tuple(
+            DrillPoint((x, 0.0, z), axis, label)
+            for x, axis, label in (
+                (end_setback, (-1.0, 0.0, 0.0), "left end"),
+                (length - end_setback, (1.0, 0.0, 0.0), "right end"),
+            )
+            for z in levels
+        )
+
+    def y_end_points(length: float, levels: tuple[float, ...]) -> tuple[DrillPoint, ...]:
+        return tuple(
+            DrillPoint((0.0, y, z), axis, label)
+            for y, axis, label in (
+                (end_setback, (0.0, -1.0, 0.0), "front end"),
+                (length - end_setback, (0.0, 1.0, 0.0), "back end"),
+            )
+            for z in levels
+        )
+
+    def upward_points(length: float, count: int) -> tuple[DrillPoint, ...]:
+        return tuple(
+            DrillPoint(
+                (length * index / (count + 1), 0.0, spec.top_rail_height - end_setback),
+                (0.0, 0.0, 1.0),
+                f"top attachment {index}",
+            )
+            for index in range(1, count + 1)
+        )
+
+    pocket_note = (
+        "Use a 9.5 mm stepped pocket-hole bit and 15° jig. Datum all dimensions from "
+        "the cut-stock minimum corner; verify the jig setting on an offcut."
+    )
+    drill_operations = (
+        DrillOperation(
+            "DR-TOP-RAIL-LONG-ENDS",
+            top_rail_long.number,
+            "Pocket holes at both rail ends",
+            "pocket_hole",
+            "inside face",
+            ("x", "z"),
+            spec.pocket_hole_bit_diameter,
+            x_end_points(long_member_length, top_rail_hole_levels),
+            angle_deg=spec.pocket_hole_angle_deg,
+            fastener_code=frame_pocket_screw.code,
+            counts_fastener=True,
+            notes=pocket_note,
+        ),
+        DrillOperation(
+            "DR-TOP-RAIL-END-ENDS",
+            top_rail_end.number,
+            "Pocket holes at both end-rail ends",
+            "pocket_hole",
+            "inside face",
+            ("y", "z"),
+            spec.pocket_hole_bit_diameter,
+            y_end_points(end_member_depth, top_rail_hole_levels),
+            angle_deg=spec.pocket_hole_angle_deg,
+            fastener_code=frame_pocket_screw.code,
+            counts_fastener=True,
+            notes=pocket_note,
+        ),
+        DrillOperation(
+            "DR-EXT-TOP-RAIL-LONG-ENDS",
+            extension_top_rail_long.number,
+            "Pocket holes at both extension-rail ends",
+            "pocket_hole",
+            "inside face",
+            ("x", "z"),
+            spec.pocket_hole_bit_diameter,
+            x_end_points(extension_long_member_length, top_rail_hole_levels),
+            angle_deg=spec.pocket_hole_angle_deg,
+            fastener_code=frame_pocket_screw.code,
+            counts_fastener=True,
+            notes=pocket_note,
+        ),
+        DrillOperation(
+            "DR-EXT-TOP-RAIL-END-ENDS",
+            extension_top_rail_end.number,
+            "Pocket holes at both extension end-rail ends",
+            "pocket_hole",
+            "inside face",
+            ("y", "z"),
+            spec.pocket_hole_bit_diameter,
+            y_end_points(extension_end_member_depth, top_rail_hole_levels),
+            angle_deg=spec.pocket_hole_angle_deg,
+            fastener_code=frame_pocket_screw.code,
+            counts_fastener=True,
+            notes=pocket_note,
+        ),
+        DrillOperation(
+            "DR-SHELF-RAIL-ENDS",
+            shelf_rail.number,
+            "Single pocket hole at each shelf-rail end",
+            "pocket_hole",
+            "inside face",
+            ("x", "z"),
+            spec.pocket_hole_bit_diameter,
+            x_end_points(long_member_length, (spec.shelf_rail_height / 2,)),
+            angle_deg=spec.pocket_hole_angle_deg,
+            fastener_code=frame_pocket_screw.code,
+            counts_fastener=True,
+            notes=pocket_note,
+        ),
+        DrillOperation(
+            "DR-EXT-SHELF-RAIL-ENDS",
+            extension_shelf_rail.number,
+            "Single pocket hole at each angled shelf-rail end",
+            "pocket_hole",
+            "inside face",
+            ("x", "z"),
+            spec.pocket_hole_bit_diameter,
+            x_end_points(extension_long_member_length, (spec.shelf_rail_height / 2,)),
+            angle_deg=spec.pocket_hole_angle_deg,
+            fastener_code=frame_pocket_screw.code,
+            counts_fastener=True,
+            notes=pocket_note,
+        ),
+        DrillOperation(
+            "DR-TOP-RAIL-LONG-SEAT",
+            top_rail_long.number,
+            "Upward pocket holes for the main seat board",
+            "pocket_hole",
+            "inside face",
+            ("x", "z"),
+            spec.pocket_hole_bit_diameter,
+            upward_points(long_member_length, 4),
+            angle_deg=spec.pocket_hole_angle_deg,
+            fastener_code=top_pocket_screw.code,
+            counts_fastener=True,
+            notes=pocket_note,
+        ),
+        DrillOperation(
+            "DR-EXT-TOP-RAIL-SEAT",
+            extension_top_rail_long.number,
+            "Upward pocket holes for the extension top",
+            "pocket_hole",
+            "inside face",
+            ("x", "z"),
+            spec.pocket_hole_bit_diameter,
+            upward_points(extension_long_member_length, 2),
+            angle_deg=spec.pocket_hole_angle_deg,
+            fastener_code=top_pocket_screw.code,
+            counts_fastener=True,
+            notes=pocket_note,
+        ),
+        DrillOperation(
+            "DR-SHELF-SLAT-CLEARANCE",
+            shelf_slat.number,
+            "Countersunk clearance holes through each main shelf slat",
+            "countersunk_clearance",
+            "top face",
+            ("y", "x"),
+            spec.slat_clearance_hole_diameter,
+            (
+                DrillPoint(
+                    (spec.shelf_slat_width / 2, main_slat_hole_inset, spec.shelf_slat_thickness),
+                    (0.0, 0.0, -1.0),
+                    "front rail",
+                ),
+                DrillPoint(
+                    (
+                        spec.shelf_slat_width / 2,
+                        slat_depth - main_slat_hole_inset,
+                        spec.shelf_slat_thickness,
+                    ),
+                    (0.0, 0.0, -1.0),
+                    "back rail",
+                ),
+            ),
+            depth_mm=spec.shelf_slat_thickness,
+            countersink_diameter_mm=spec.slat_countersink_diameter,
+            angle_deg=90.0,
+            fastener_code=slat_screw.code,
+            counts_fastener=True,
+            geometry_mode="cut",
+            notes="Drill clearance and countersink from the show face.",
+        ),
+        DrillOperation(
+            "DR-EXT-SHELF-SLAT-CLEARANCE",
+            extension_shelf_slat.number,
+            "Countersunk clearance holes through each angled shelf slat",
+            "countersunk_clearance",
+            "top face",
+            ("y", "x"),
+            spec.slat_clearance_hole_diameter,
+            (
+                DrillPoint(
+                    (
+                        spec.shelf_slat_width / 2,
+                        extension_front_screw_y + spec.extension_shelf_length / 2,
+                        spec.shelf_slat_thickness,
+                    ),
+                    (0.0, 0.0, -1.0),
+                    "front support rail",
+                ),
+                DrillPoint(
+                    (
+                        spec.shelf_slat_width / 2,
+                        extension_back_screw_y + spec.extension_shelf_length / 2,
+                        spec.shelf_slat_thickness,
+                    ),
+                    (0.0, 0.0, -1.0),
+                    "back support rail",
+                ),
+            ),
+            depth_mm=spec.shelf_slat_thickness,
+            countersink_diameter_mm=spec.slat_countersink_diameter,
+            angle_deg=90.0,
+            fastener_code=slat_screw.code,
+            counts_fastener=True,
+            geometry_mode="cut",
+            notes="Drill clearance and countersink from the show face.",
+        ),
+        DrillOperation(
+            "DR-STOPPER-CLEARANCE",
+            extension_shelf_stopper.number,
+            "Clearance holes through the shoe-stop face",
+            "countersunk_clearance",
+            "front face",
+            ("x", "z"),
+            spec.slat_clearance_hole_diameter,
+            tuple(
+                DrillPoint(
+                    (
+                        spec.shelf_slat_width / 2 + index * extension_slat_pitch,
+                        0.0,
+                        spec.extension_shelf_stopper_height / 2,
+                    ),
+                    (0.0, 1.0, 0.0),
+                    f"slat {index + 1}",
+                )
+                for index in range(spec.extension_slat_count)
+            ),
+            depth_mm=spec.extension_shelf_stopper_thickness,
+            countersink_diameter_mm=spec.slat_countersink_diameter,
+            angle_deg=90.0,
+            fastener_code=slat_screw.code,
+            counts_fastener=True,
+            notes=(
+                "Mark from the slat centres after a dry fit. These holes are documented but "
+                "not cut in the model because the stop is drilled in assembly."
+            ),
+        ),
+        DrillOperation(
+            "DR-SHELF-RAIL-PILOTS",
+            shelf_rail.number,
+            "Hardwood pilot holes receiving main shelf-slat screws",
+            "pilot",
+            "top face",
+            ("x", "y"),
+            spec.slat_pilot_hole_diameter,
+            tuple(
+                DrillPoint(
+                    (
+                        spec.shelf_slat_end_gap + spec.shelf_slat_width / 2 + index * slat_pitch,
+                        spec.shelf_rail_thickness / 2,
+                        spec.shelf_rail_height,
+                    ),
+                    (0.0, 0.0, -1.0),
+                    f"slat {index + 1}",
+                )
+                for index in range(spec.shelf_slat_count)
+            ),
+            depth_mm=min(20.0, spec.shelf_rail_height - 2.0),
+            fastener_code=slat_screw.code,
+            notes="Transfer from the clearance-drilled slats during a dry fit.",
+        ),
+        DrillOperation(
+            "DR-EXT-SHELF-RAIL-PILOTS",
+            extension_shelf_rail.number,
+            "Hardwood pilot holes receiving angled shelf-slat screws",
+            "pilot",
+            "top face",
+            ("x", "y"),
+            spec.slat_pilot_hole_diameter,
+            tuple(
+                DrillPoint(
+                    (
+                        spec.shelf_slat_end_gap
+                        + spec.shelf_slat_width / 2
+                        + index * extension_slat_pitch,
+                        spec.shelf_rail_thickness / 2,
+                        spec.shelf_rail_height,
+                    ),
+                    (0.0, 0.0, -1.0),
+                    f"slat {index + 1}",
+                )
+                for index in range(spec.extension_slat_count)
+            ),
+            depth_mm=min(20.0, spec.shelf_rail_height - 2.0),
+            fastener_code=slat_screw.code,
+            notes="Transfer from the clearance-drilled slats during a dry fit.",
+        ),
+        DrillOperation(
+            "DR-EXT-SLAT-STOPPER-PILOT",
+            extension_shelf_slat.number,
+            "Pilot at the front end of each slat for the shoe stop",
+            "pilot",
+            "front end",
+            ("x", "z"),
+            spec.slat_pilot_hole_diameter,
+            (
+                DrillPoint(
+                    (spec.shelf_slat_width / 2, 0.0, spec.shelf_slat_thickness / 2),
+                    (0.0, 1.0, 0.0),
+                    "shoe-stop screw",
+                ),
+            ),
+            depth_mm=min(20.0, spec.extension_shelf_length - 2.0),
+            fastener_code=slat_screw.code,
+            notes="Transfer the centre from the stop after clamping the dry assembly.",
+        ),
+    )
+
+    joints = (
+        JointSpec(
+            "J01-MAIN-LONG-RAILS",
+            "Main long top rails to four legs",
+            top_rail_long.number,
+            leg.number,
+            frame_pocket_screw.code,
+            8,
+            ("DR-TOP-RAIL-LONG-ENDS",),
+            1,
+        ),
+        JointSpec(
+            "J02-MAIN-END-RAILS",
+            "Main end top rails to four legs",
+            top_rail_end.number,
+            leg.number,
+            frame_pocket_screw.code,
+            8,
+            ("DR-TOP-RAIL-END-ENDS",),
+            1,
+        ),
+        JointSpec(
+            "J03-EXT-LONG-RAILS",
+            "Extension long top rails to transition and end legs",
+            extension_top_rail_long.number,
+            leg.number,
+            frame_pocket_screw.code,
+            8,
+            ("DR-EXT-TOP-RAIL-LONG-ENDS",),
+            2,
+        ),
+        JointSpec(
+            "J04-EXT-END-RAIL",
+            "Extension end top rail to its two legs",
+            extension_top_rail_end.number,
+            leg.number,
+            frame_pocket_screw.code,
+            4,
+            ("DR-EXT-TOP-RAIL-END-ENDS",),
+            2,
+        ),
+        JointSpec(
+            "J05-MAIN-SHELF-RAILS",
+            "Main shelf support rails to four legs",
+            shelf_rail.number,
+            leg.number,
+            frame_pocket_screw.code,
+            4,
+            ("DR-SHELF-RAIL-ENDS",),
+            3,
+        ),
+        JointSpec(
+            "J06-EXT-SHELF-RAILS",
+            "Angled shelf support rails to extension legs",
+            extension_shelf_rail.number,
+            leg.number,
+            frame_pocket_screw.code,
+            4,
+            ("DR-EXT-SHELF-RAIL-ENDS",),
+            3,
+        ),
+        JointSpec(
+            "J07-MAIN-SEAT",
+            "Main seat support board to long top rails",
+            top_rail_long.number,
+            seat_base.number,
+            top_pocket_screw.code,
+            8,
+            ("DR-TOP-RAIL-LONG-SEAT",),
+            4,
+        ),
+        JointSpec(
+            "J08-EXTENSION-TOP",
+            "Uncovered extension top to its long rails",
+            extension_top_rail_long.number,
+            extension_top.number,
+            top_pocket_screw.code,
+            4,
+            ("DR-EXT-TOP-RAIL-SEAT",),
+            4,
+        ),
+        JointSpec(
+            "J09-MAIN-SHELF-SLATS",
+            "Main shelf slats to front and back support rails",
+            shelf_slat.number,
+            shelf_rail.number,
+            slat_screw.code,
+            2 * spec.shelf_slat_count,
+            ("DR-SHELF-SLAT-CLEARANCE",),
+            5,
+        ),
+        JointSpec(
+            "J10-EXT-SHELF-SLATS",
+            "Angled shelf slats to both support rails",
+            extension_shelf_slat.number,
+            extension_shelf_rail.number,
+            slat_screw.code,
+            2 * spec.extension_slat_count,
+            ("DR-EXT-SHELF-SLAT-CLEARANCE",),
+            5,
+        ),
+        JointSpec(
+            "J11-SHOE-STOP",
+            "Angled shelf shoe stop to the front of each slat",
+            extension_shelf_stopper.number,
+            extension_shelf_slat.number,
+            slat_screw.code,
+            spec.extension_slat_count,
+            ("DR-STOPPER-CLEARANCE",),
+            6,
+        ),
+    )
+
     return Design(
         name=name,
         model="entryway_bench",
@@ -691,4 +1244,16 @@ def build_entryway_bench(name: str, parameters: dict[str, Any]) -> Design:
             cushion,
             cushion_piping,
         ),
+        joinery_status="prototype_not_structurally_certified",
+        joinery_notes=(
+            "Indoor painted-beech prototype based on nominal stock sizes; no design loads have "
+            "been certified.",
+            "Confirm material species, moisture, screw product, edge distances, and jig settings "
+            "on offcuts before fabrication.",
+            "Pocket locations are jig marks, while shelf-slat clearance holes are cut into "
+            "the CAD.",
+        ),
+        fasteners=(frame_pocket_screw, top_pocket_screw, slat_screw),
+        drill_operations=drill_operations,
+        joints=joints,
     )

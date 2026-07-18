@@ -54,8 +54,22 @@ def _write_bom(design: Design, path: Path) -> None:
         writer.writerows(rows)
 
 
+def _hardware_rows(design: Design) -> list[dict[str, Any]]:
+    quantities = design.hardware_quantities()
+    return [fastener.as_dict(quantities[fastener.code]) for fastener in design.fasteners]
+
+
+def _write_hardware_bom(design: Design, path: Path) -> None:
+    rows = _hardware_rows(design)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def _manifest(design: Design, artifacts: Iterable[Path], root: Path) -> dict[str, Any]:
     size = design.overall_size_mm()
+    part_quantities = {part.number: part.quantity for part in design.parts}
     return {
         "schema_version": 1,
         "name": design.name,
@@ -73,6 +87,16 @@ def _manifest(design: Design, artifacts: Iterable[Path], root: Path) -> dict[str
             }
             for row, part in zip(_bom_rows(design), design.parts, strict=True)
         ],
+        "joinery": {
+            "status": design.joinery_status,
+            "notes": list(design.joinery_notes),
+            "fasteners": _hardware_rows(design),
+            "drill_operations": [
+                operation.as_dict(part_quantities[operation.part_number])
+                for operation in design.drill_operations
+            ],
+            "joints": [joint.as_dict() for joint in design.joints],
+        },
         "artifacts": sorted(str(path.relative_to(root)) for path in artifacts),
     }
 
@@ -113,6 +137,7 @@ def write_catalog(build_root: Path) -> Path:
             "stl": "*.stl",
             "svg": "*.svg",
             "bom": "bom.csv",
+            "hardware": "hardware.csv",
         }
         for key, pattern in patterns.items():
             matches = sorted(build_dir.glob(pattern))
@@ -209,6 +234,10 @@ def export_design(design: Design, output_dir: Path, formats: Iterable[str]) -> l
         path = output_dir / "bom.csv"
         _write_bom(design, path)
         artifacts.append(path)
+        if design.fasteners:
+            hardware_path = output_dir / "hardware.csv"
+            _write_hardware_bom(design, hardware_path)
+            artifacts.append(hardware_path)
 
     manifest_path = output_dir / "manifest.json"
     manifest = _manifest(design, [*artifacts, manifest_path], output_dir)

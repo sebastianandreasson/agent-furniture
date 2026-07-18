@@ -8,6 +8,7 @@ from querycad.config import load_design
 from querycad.export import export_design, write_catalog
 
 DESIGN = Path("designs/dining-table.json")
+BENCH_DESIGN = Path("designs/entryway-bench.json")
 
 
 def test_load_example_design() -> None:
@@ -57,3 +58,20 @@ def test_catalog_indexes_a_complete_glb_build(tmp_path: Path) -> None:
     assert entry["overallSizeMm"] == {"x": 1600.0, "y": 800.0, "z": 750.0}
     assert entry["artifacts"]["glb"] == "/dining-table/dining-table.glb"
     assert len(entry["revision"]) == 16
+
+
+def test_bench_export_includes_hardware_and_drill_schedule(tmp_path: Path) -> None:
+    design = load_design(BENCH_DESIGN)
+
+    artifacts = export_design(design, tmp_path, ("bom",))
+    relative = {path.relative_to(tmp_path).as_posix() for path in artifacts}
+    manifest = json.loads((tmp_path / "manifest.json").read_text())
+
+    assert "hardware.csv" in relative
+    assert {item["code"]: item["quantity"] for item in manifest["joinery"]["fasteners"]} == {
+        "PH-38-FINE": 36,
+        "PH-32-FINE": 12,
+        "CSK-4X35": 36,
+    }
+    assert len(manifest["joinery"]["drill_operations"]) == 14
+    assert len(manifest["joinery"]["joints"]) == 11

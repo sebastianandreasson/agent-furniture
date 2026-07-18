@@ -17,9 +17,9 @@ uv run querycad build designs/entryway-bench.json
 ```
 
 The build command writes an assembly STEP file, a browser-viewable GLB, an assembly STL, an SVG
-isometric drawing, one STL per unique part, a BOM CSV, and a machine-readable manifest beneath
-`build/dining-table/`. Generated files are intentionally ignored by Git; source models, design
-specifications, tests, and the dependency lockfile are committed.
+isometric drawing, one STL per unique part, a BOM CSV, an optional hardware CSV, and a
+machine-readable manifest beneath `build/dining-table/`. Generated files are intentionally ignored
+by Git; source models, design specifications, tests, and the dependency lockfile are committed.
 
 ## Web studio
 
@@ -57,6 +57,12 @@ npm run dev
 Open `http://127.0.0.1:5173`. The editor streams an online starter Gaussian splat, loads the exact
 CadQuery GLB from `build/`, and provides move/rotate gizmos, numeric millimetre controls, snapping,
 camera presets, layer controls, and direct links to STEP, BOM, manifest, and GLB artifacts.
+
+The Materials page turns a model's joinery contract into a printable build document. For the
+entryway bench it totals every screw specification, marks drill centres on part-face diagrams, lists
+pilot/clearance/pocket-hole operations, sequences the joints, and links hover state back to the 3D
+assembly. See `docs/JOINERY_AND_DRILLING.md` for the coordinate contract and the intentionally
+conservative fabrication boundary.
 
 The default web lifecycle now builds the photo-derived entryway bench. Its editable defaults live in
 `EntrywayBenchSpec`; the design JSON contains optional variant overrides, and the visual assumptions

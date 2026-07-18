@@ -28,8 +28,10 @@ Use the **Materials** tab to inspect the active design's generated manifest. It 
 groups, total assembly occurrences, unique part types, stock dimensions, and quantities, with a link
 to the CSV cut list. The page follows catalog revisions, so a successful live CAD rebuild refreshes
 the inventory along with the geometry. Its proportional part schematic places every unique stock
-envelope beside a prominent quantity and can be printed or saved as a clean A4 landscape PDF. An
-orbitable model sits beside the on-screen sheet; hovering a part card highlights all of its assembly
+envelope beside a prominent quantity. Designs with a joinery schedule also show screw quantities and
+lengths, drill-face crosshairs, datum coordinates, pilot/clearance/pocket-hole legends, and an
+assembly sequence. The complete sheet can be printed or saved as an A4 landscape PDF. An orbitable
+model sits beside the on-screen sheet; hovering a part card or joint row highlights its assembly
 occurrences using manifest placement names.
 
 Useful commands:
@@ -45,7 +47,7 @@ npm run preview      # serve the production bundle
 ## Runtime contract
 
 - `build/catalog.json` lists displayable GLB builds and their content revisions.
-- Each build manifest carries the BOM rows and exact CAD RGBA color used by the Materials page.
+- Each build manifest carries BOM rows, exact CAD RGBA colors, and optional validated joinery data.
 - Every furniture placement is stored separately in browser local storage.
 - Geometry is never browser-scaled as a resizing operation; dimensions change in CadQuery.
 - CadQuery files are Z-up. The web scene is Y-up and keeps one world unit equal to one millimetre.

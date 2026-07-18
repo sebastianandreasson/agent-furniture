@@ -29,6 +29,7 @@ const TEST_CATALOG = {
         manifest: '/dining-table/manifest.json',
         step: '/dining-table/dining-table.step',
         bom: '/dining-table/bom.csv',
+        hardware: '/dining-table/hardware.csv',
       },
     },
   ],
@@ -82,6 +83,75 @@ const TEST_MANIFEST = {
       ],
     },
   ],
+  joinery: {
+    status: 'prototype_not_structurally_certified',
+    notes: ['Confirm the drilling setup on matching offcuts.'],
+    fasteners: [
+      {
+        code: 'PH-32-FINE',
+        description: '32 mm fine-thread pocket-hole screw',
+        quantity: 2,
+        lengthMm: 32,
+        nominalSize: 'fine thread',
+        head: 'washer head',
+        drive: '#2 square',
+        thread: 'fine',
+        finish: 'zinc',
+        application: 'Top attachment',
+        manufacturer: 'Example',
+        productCode: 'PH32',
+        sourceUrl: 'https://example.test/ph32',
+        status: 'prototype_assumption',
+        notes: 'Verify on scrap.',
+      },
+    ],
+    drillOperations: [
+      {
+        operationId: 'DR-TOP',
+        partNumber: 'TOP-001',
+        label: 'Top attachment holes',
+        kind: 'pocket_hole',
+        face: 'bottom face',
+        viewAxes: ['x', 'y'] as ['x', 'y'],
+        diameterMm: 9.5,
+        depthMm: null,
+        countersinkDiameterMm: null,
+        angleDeg: 15,
+        fastenerCode: 'PH-32-FINE',
+        countsFastener: true,
+        geometryMode: 'marked_only' as const,
+        pointsPerPart: 2,
+        partQuantity: 1,
+        totalHoles: 2,
+        points: [
+          {
+            positionMm: [300, 100, 0] as [number, number, number],
+            axis: [0, 0, 1] as [number, number, number],
+            label: 'left',
+          },
+          {
+            positionMm: [1300, 100, 0] as [number, number, number],
+            axis: [0, 0, 1] as [number, number, number],
+            label: 'right',
+          },
+        ],
+        notes: 'Jig controlled.',
+      },
+    ],
+    joints: [
+      {
+        jointId: 'J01-TOP',
+        description: 'Table top to frame',
+        sourcePartNumber: 'TOP-001',
+        targetPartNumber: 'LEG-001',
+        fastenerCode: 'PH-32-FINE',
+        quantity: 2,
+        drillOperationIds: ['DR-TOP'],
+        assemblyStep: 1,
+        notes: '',
+      },
+    ],
+  },
 }
 
 vi.mock('./scene/StarterSplat', () => ({
@@ -201,6 +271,10 @@ describe('QueryCAD editor shell', () => {
       screen.getByText('2', { selector: '.inventory-summary strong' }),
     ).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Part schematic' })).toBeTruthy()
+    expect(
+      screen.getByRole('heading', { name: '2 screws specified' }),
+    ).toBeTruthy()
+    expect(screen.getByText('Ø9.5 · jig depth · 15° · 2/part')).toBeTruthy()
     expect(screen.getAllByRole('img', { name: /quantity/ })).toHaveLength(3)
 
     await user.hover(

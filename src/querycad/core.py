@@ -13,6 +13,132 @@ Color4 = tuple[float, float, float, float]
 
 
 @dataclass(frozen=True)
+class FastenerSpec:
+    """One fully specified hardware item used by a design."""
+
+    code: str
+    description: str
+    length_mm: float
+    nominal_size: str
+    head: str
+    drive: str
+    thread: str
+    finish: str
+    application: str
+    manufacturer: str = "project-specified"
+    product_code: str = ""
+    source_url: str = ""
+    status: str = "prototype_assumption"
+    notes: str = ""
+
+    def as_dict(self, quantity: int) -> dict[str, Any]:
+        return {
+            "code": self.code,
+            "description": self.description,
+            "quantity": quantity,
+            "length_mm": self.length_mm,
+            "nominal_size": self.nominal_size,
+            "head": self.head,
+            "drive": self.drive,
+            "thread": self.thread,
+            "finish": self.finish,
+            "application": self.application,
+            "manufacturer": self.manufacturer,
+            "product_code": self.product_code,
+            "source_url": self.source_url,
+            "status": self.status,
+            "notes": self.notes,
+        }
+
+
+@dataclass(frozen=True)
+class DrillPoint:
+    """A hole location in part-stock coordinates, measured from its minimum corner."""
+
+    position_mm: Vector3
+    axis: Vector3
+    label: str = ""
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "position_mm": list(self.position_mm),
+            "axis": list(self.axis),
+            "label": self.label,
+        }
+
+
+@dataclass(frozen=True)
+class DrillOperation:
+    """A repeatable drilling operation on every occurrence of a unique part."""
+
+    operation_id: str
+    part_number: str
+    label: str
+    kind: str
+    face: str
+    view_axes: tuple[str, str]
+    diameter_mm: float
+    points: tuple[DrillPoint, ...]
+    depth_mm: float | None = None
+    countersink_diameter_mm: float | None = None
+    angle_deg: float | None = None
+    fastener_code: str | None = None
+    counts_fastener: bool = False
+    geometry_mode: str = "marked_only"
+    notes: str = ""
+
+    def as_dict(self, part_quantity: int) -> dict[str, Any]:
+        return {
+            "operation_id": self.operation_id,
+            "part_number": self.part_number,
+            "label": self.label,
+            "kind": self.kind,
+            "face": self.face,
+            "view_axes": list(self.view_axes),
+            "diameter_mm": self.diameter_mm,
+            "depth_mm": self.depth_mm,
+            "countersink_diameter_mm": self.countersink_diameter_mm,
+            "angle_deg": self.angle_deg,
+            "fastener_code": self.fastener_code,
+            "counts_fastener": self.counts_fastener,
+            "geometry_mode": self.geometry_mode,
+            "points_per_part": len(self.points),
+            "part_quantity": part_quantity,
+            "total_holes": len(self.points) * part_quantity,
+            "points": [point.as_dict() for point in self.points],
+            "notes": self.notes,
+        }
+
+
+@dataclass(frozen=True)
+class JointSpec:
+    """An assembly connection tied to its hardware and source-part drill marks."""
+
+    joint_id: str
+    description: str
+    source_part_number: str
+    target_part_number: str
+    fastener_code: str
+    quantity: int
+    drill_operation_ids: tuple[str, ...]
+    assembly_step: int
+    notes: str = ""
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "joint_id": self.joint_id,
+            "description": self.description,
+            "source_part_number": self.source_part_number,
+            "target_part_number": self.target_part_number,
+            "fastener_code": self.fastener_code,
+            "quantity": self.quantity,
+            "drill_operation_ids": list(self.drill_operation_ids),
+            "assembly_step": self.assembly_step,
+            "notes": self.notes,
+        }
+
+
+@dataclass(frozen=True)
 class Placement:
     """A named occurrence of a local-coordinate part."""
 
@@ -60,6 +186,11 @@ class Design:
     model: str
     parameters: dict[str, Any]
     parts: tuple[Part, ...]
+    joinery_status: str = "unspecified"
+    joinery_notes: tuple[str, ...] = ()
+    fasteners: tuple[FastenerSpec, ...] = ()
+    drill_operations: tuple[DrillOperation, ...] = ()
+    joints: tuple[JointSpec, ...] = ()
 
     def assembly(self) -> cq.Assembly:
         assembly = cq.Assembly(name=self.name)
@@ -88,6 +219,12 @@ class Design:
     def total_occurrences(self) -> int:
         return sum(part.quantity for part in self.parts)
 
+    def hardware_quantities(self) -> dict[str, int]:
+        quantities = {fastener.code: 0 for fastener in self.fasteners}
+        for joint in self.joints:
+            quantities[joint.fastener_code] += joint.quantity
+        return quantities
+
     def validate_solids(self) -> None:
         if not self.parts:
             raise ValueError("a design must contain at least one part")
@@ -106,3 +243,106 @@ class Design:
                 if placement.name in names:
                     raise ValueError(f"duplicate placement name: {placement.name}")
                 names.add(placement.name)
+
+        part_by_number = {part.number: part for part in self.parts}
+        fastener_by_code: dict[str, FastenerSpec] = {}
+        for fastener in self.fasteners:
+            if not fastener.code.strip():
+                raise ValueError("fastener code cannot be empty")
+            if fastener.code in fastener_by_code:
+                raise ValueError(f"duplicate fastener code: {fastener.code}")
+            if fastener.length_mm <= 0:
+                raise ValueError(f"fastener {fastener.code} must have a positive length")
+            fastener_by_code[fastener.code] = fastener
+
+        axes = {"x": 0, "y": 1, "z": 2}
+        operation_by_id: dict[str, DrillOperation] = {}
+        counted_hardware = {code: 0 for code in fastener_by_code}
+        for operation in self.drill_operations:
+            if operation.operation_id in operation_by_id:
+                raise ValueError(f"duplicate drill operation: {operation.operation_id}")
+            operation_by_id[operation.operation_id] = operation
+            if operation.part_number not in part_by_number:
+                raise ValueError(
+                    f"drill operation {operation.operation_id} references unknown part "
+                    f"{operation.part_number}"
+                )
+            if operation.diameter_mm <= 0:
+                raise ValueError(
+                    f"drill operation {operation.operation_id} must have a positive diameter"
+                )
+            if operation.depth_mm is not None and operation.depth_mm <= 0:
+                raise ValueError(
+                    f"drill operation {operation.operation_id} must have a positive depth"
+                )
+            if (
+                len(operation.view_axes) != 2
+                or any(axis not in axes for axis in operation.view_axes)
+                or operation.view_axes[0] == operation.view_axes[1]
+            ):
+                raise ValueError(f"drill operation {operation.operation_id} has invalid view axes")
+            if not operation.points:
+                raise ValueError(f"drill operation {operation.operation_id} has no points")
+            if operation.fastener_code is not None:
+                if operation.fastener_code not in fastener_by_code:
+                    raise ValueError(
+                        f"drill operation {operation.operation_id} references unknown fastener "
+                        f"{operation.fastener_code}"
+                    )
+            elif operation.counts_fastener:
+                raise ValueError(
+                    f"drill operation {operation.operation_id} counts hardware without a fastener"
+                )
+
+            part = part_by_number[operation.part_number]
+            for point in operation.points:
+                if not any(abs(component) > 1e-9 for component in point.axis):
+                    raise ValueError(
+                        f"drill operation {operation.operation_id} has a zero-length drill axis"
+                    )
+                for coordinate, limit, axis in zip(
+                    point.position_mm, part.stock_size_mm, ("x", "y", "z"), strict=True
+                ):
+                    if coordinate < -1e-6 or coordinate > limit + 1e-6:
+                        raise ValueError(
+                            f"drill operation {operation.operation_id} point lies outside "
+                            f"{part.number} on {axis}"
+                        )
+            if operation.counts_fastener and operation.fastener_code is not None:
+                counted_hardware[operation.fastener_code] += len(operation.points) * part.quantity
+
+        joint_ids: set[str] = set()
+        joint_hardware = {code: 0 for code in fastener_by_code}
+        for joint in self.joints:
+            if joint.joint_id in joint_ids:
+                raise ValueError(f"duplicate joint: {joint.joint_id}")
+            joint_ids.add(joint.joint_id)
+            if joint.source_part_number not in part_by_number:
+                raise ValueError(f"joint {joint.joint_id} has an unknown source part")
+            if joint.target_part_number not in part_by_number:
+                raise ValueError(f"joint {joint.joint_id} has an unknown target part")
+            if joint.fastener_code not in fastener_by_code:
+                raise ValueError(f"joint {joint.joint_id} has an unknown fastener")
+            if joint.quantity <= 0 or joint.assembly_step <= 0:
+                raise ValueError(f"joint {joint.joint_id} must have positive quantity and step")
+            for operation_id in joint.drill_operation_ids:
+                operation = operation_by_id.get(operation_id)
+                if operation is None:
+                    raise ValueError(
+                        f"joint {joint.joint_id} references unknown drill operation {operation_id}"
+                    )
+                if operation.part_number != joint.source_part_number:
+                    raise ValueError(
+                        f"joint {joint.joint_id} drill operation belongs to a different part"
+                    )
+                if operation.fastener_code != joint.fastener_code:
+                    raise ValueError(
+                        f"joint {joint.joint_id} drill operation uses a different fastener"
+                    )
+            joint_hardware[joint.fastener_code] += joint.quantity
+
+        if counted_hardware != joint_hardware:
+            raise ValueError(
+                "drill-operation screw counts do not match the joint schedule: "
+                f"drills={counted_hardware}, joints={joint_hardware}"
+            )

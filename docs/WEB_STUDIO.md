@@ -50,19 +50,23 @@ without changing model geometry or saved placement coordinates.
 
 The Materials page fetches the selected build's generated manifest using the same catalog revision.
 It groups occurrences by material, displays the exact CAD color, totals finished-solid volume, and
-lists every stable part number with quantity and stock dimensions. This remains a model-derived
-assembly inventory: it does not estimate purchase stock, waste, hardware, upholstery allowances,
-joinery, or fabrication tolerances.
+lists every stable part number with quantity and stock dimensions. If the model publishes joinery,
+the same manifest also supplies fastener specifications and quantities, joint groups, and drilling
+operations. It still does not estimate purchase stock, waste, upholstery allowances, structural
+capacity, or fabrication tolerances.
 
-The same page renders a proportional stock-envelope schematic for every unique part. Each diagram
-shows its part number, assembly quantity, material, and sorted length × face width × thickness. The
-print action produces an A4 landscape document (or browser PDF); it is a comparison sheet, not a
-one-to-one cutting template.
+The same page renders proportional stock-face schematics for every unique part. Each diagram shows
+its part number, assembly quantity, material, dimensions, numbered drill-centre crosshairs, and
+per-operation coordinates. Multiple marked faces are shown when a part needs drilling from more than
+one orientation. The hardware roll-up, drill legend, assembly sequence, and qualification notes are
+part of the A4 landscape print/PDF output. It is a dimensioned reference, not a one-to-one template
+or CNC toolpath.
 
 On screen, the schematic sits beside a dedicated orbitable GLB preview. Manifest placement names map
 each stable part number back to the assembly nodes, so hovering or keyboard-focusing a schematic card
-highlights every occurrence of that part while dimming the rest. The print stylesheet omits the model
-and keeps only the fabrication-oriented document.
+highlights every occurrence of that part while dimming the rest. Hovering a joint row similarly
+highlights its drilled source part. The print stylesheet omits the model and keeps only the
+fabrication-oriented document.
 
 The current online splat is a CORS-enabled sample hosted on GitHub. It proves mixed mesh/splat
 rendering and streaming, but it is deliberately labelled uncalibrated. Replace it with a captured

@@ -7,6 +7,7 @@ export type BuildArtifacts = {
   stl?: string
   svg?: string
   bom?: string
+  hardware?: string
 }
 
 export type CatalogDesign = {
@@ -47,6 +48,73 @@ export type ManifestPart = {
   placementNames: string[]
 }
 
+export type AxisName = 'x' | 'y' | 'z'
+
+export type ManifestFastener = {
+  code: string
+  description: string
+  quantity: number
+  lengthMm: number
+  nominalSize: string
+  head: string
+  drive: string
+  thread: string
+  finish: string
+  application: string
+  manufacturer: string
+  productCode: string
+  sourceUrl: string
+  status: string
+  notes: string
+}
+
+export type ManifestDrillPoint = {
+  positionMm: Vector3Tuple
+  axis: Vector3Tuple
+  label: string
+}
+
+export type ManifestDrillOperation = {
+  operationId: string
+  partNumber: string
+  label: string
+  kind: string
+  face: string
+  viewAxes: [AxisName, AxisName]
+  diameterMm: number
+  depthMm: number | null
+  countersinkDiameterMm: number | null
+  angleDeg: number | null
+  fastenerCode: string | null
+  countsFastener: boolean
+  geometryMode: 'cut' | 'marked_only'
+  pointsPerPart: number
+  partQuantity: number
+  totalHoles: number
+  points: ManifestDrillPoint[]
+  notes: string
+}
+
+export type ManifestJoint = {
+  jointId: string
+  description: string
+  sourcePartNumber: string
+  targetPartNumber: string
+  fastenerCode: string
+  quantity: number
+  drillOperationIds: string[]
+  assemblyStep: number
+  notes: string
+}
+
+export type ManifestJoinery = {
+  status: string
+  notes: string[]
+  fasteners: ManifestFastener[]
+  drillOperations: ManifestDrillOperation[]
+  joints: ManifestJoint[]
+}
+
 export type FurnitureManifest = {
   schemaVersion: 1
   name: string
@@ -54,4 +122,5 @@ export type FurnitureManifest = {
   units: 'mm'
   partOccurrences: number
   parts: ManifestPart[]
+  joinery: ManifestJoinery
 }
