@@ -86,6 +86,7 @@ const TEST_MANIFEST = {
   joinery: {
     status: 'prototype_not_structurally_certified',
     notes: ['Confirm the drilling setup on matching offcuts.'],
+    externalTargets: [],
     fasteners: [
       {
         code: 'PH-32-FINE',

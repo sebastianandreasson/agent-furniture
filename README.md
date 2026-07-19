@@ -14,6 +14,7 @@ uv run querycad list
 uv run querycad validate designs/dining-table.json
 uv run querycad build designs/dining-table.json
 uv run querycad build designs/entryway-bench.json
+uv run querycad build designs/beam-wall-bookshelf.json
 ```
 
 The build command writes an assembly STEP file, a browser-viewable GLB, an assembly STL, an SVG
@@ -71,6 +72,12 @@ behind the estimates are documented in `docs/ENTRYWAY_BENCH.md`.
 After an agent changes or adds a model, run its normal QueryCAD build. The UI polls the catalog every
 second and uses the GLB content hash to replace changed geometry without losing the saved
 placement. `npm run build` creates a standalone `web/dist/` bundle containing the current artifacts.
+
+The three-bay beam-wall bookshelf is the built-in example. It models separate opening widths,
+staggered masonry-grid dividers, traditional base cabinets, post cladding, shallow front-facing book
+ledges, a sloped crown, and site-only anchor targets without adding the existing structure to the
+cut list. Its assumptions and measurement boundary are documented in
+`docs/BEAM_WALL_BOOKSHELF.md`.
 
 ## Agent workflow
 

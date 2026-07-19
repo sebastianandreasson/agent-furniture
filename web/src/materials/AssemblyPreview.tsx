@@ -178,10 +178,11 @@ export function AssemblyPreview({
           }}
           gl={{ antialias: true, alpha: false }}
         >
-          <color attach="background" args={['#0b1015']} />
-          <ambientLight intensity={1.3} />
-          <directionalLight position={[1600, 2600, 1800]} intensity={3.1} />
-          <directionalLight position={[-1400, 900, -1200]} intensity={1.1} />
+          <color attach="background" args={['#f3f2ee']} />
+          <ambientLight intensity={1.65} />
+          <directionalLight position={[1600, 2600, 1800]} intensity={3.3} />
+          <directionalLight position={[-1400, 1100, -1200]} intensity={1.35} />
+          <hemisphereLight args={['#ffffff', '#d8d5ce', 1.05]} />
           <Suspense
             fallback={
               <Html center>

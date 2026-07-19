@@ -33,6 +33,7 @@ const MANIFEST = {
   joinery: {
     status: 'prototype',
     notes: [],
+    externalTargets: [],
     fasteners: [
       {
         code: 'PH-38',

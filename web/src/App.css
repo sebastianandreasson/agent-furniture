@@ -311,7 +311,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: #0d1116;
+  background: #f3f2ee;
 }
 
 .viewport-toolbar {
@@ -539,6 +539,246 @@ kbd {
 
 .artifact-link:hover {
   color: #ffd0b5;
+}
+
+/* Light studio theme — shared with the paper schematic workspace. */
+.app-shell {
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+.app-header {
+  border-color: var(--line);
+  background: #fbfaf5;
+  box-shadow: 0 1px 8px #6d665514;
+}
+
+.brand-mark {
+  background: #ef824b;
+  color: #2a170e;
+  box-shadow: inset 0 0 0 1px #f8ad82;
+}
+
+.eyebrow,
+.source-kicker,
+.header-status,
+.source-note,
+.build-copy small,
+.layer-row small,
+.inspector-title > p:last-child,
+.numeric-field,
+.spec-list dt {
+  color: var(--muted);
+}
+
+.app-header h1,
+.build-copy strong,
+.layer-row strong,
+.inspector-title h2 {
+  color: var(--ink-strong);
+}
+
+.primary-nav {
+  border-color: var(--line);
+  background: var(--surface-subtle);
+}
+
+.primary-nav button {
+  color: var(--muted);
+}
+
+.primary-nav button:hover {
+  background: var(--surface-raised);
+  color: var(--ink-strong);
+}
+
+.primary-nav button.is-active,
+.segmented-control button.is-active,
+.view-switcher button.is-active,
+.toolbar-button.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  box-shadow: inset 0 0 0 1px #df744044;
+}
+
+.status-dot {
+  background: #4d9a6d;
+  box-shadow: 0 0 0 3px #4d9a6d20;
+}
+
+.status-dot.is-error {
+  background: var(--danger);
+  box-shadow: 0 0 0 3px #a4413020;
+}
+
+.status-divider {
+  background: var(--line);
+}
+
+.icon-button {
+  border-color: var(--line);
+  background: var(--surface-raised);
+  color: var(--ink);
+}
+
+.icon-button:hover {
+  border-color: #c17a54;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.panel {
+  background: var(--surface);
+}
+
+.asset-panel,
+.inspector-panel,
+.panel-section,
+.viewport-toolbar {
+  border-color: var(--line);
+}
+
+.section-heading {
+  color: #596164;
+}
+
+.count-badge,
+.revision {
+  background: #e6e3da;
+  color: #626a6c;
+}
+
+.build-card:hover,
+.build-card.is-active {
+  background: #efede5;
+}
+
+.build-card.is-active {
+  border-color: #d7885f;
+  background: #fff8ef;
+  box-shadow: inset 3px 0 var(--accent);
+}
+
+.build-icon {
+  border-color: #bbb8ae;
+  background: #fbfaf5;
+  color: var(--accent);
+}
+
+.visibility-toggle {
+  background: #d7d4ca;
+  box-shadow: inset 0 0 0 1px #bbb8ae;
+}
+
+.visibility-toggle::after {
+  background: #8c9291;
+}
+
+.visibility-toggle.is-on {
+  background: #e8b79d;
+}
+
+.visibility-toggle.is-on::after {
+  background: var(--accent);
+}
+
+.source-note a,
+.artifact-link {
+  color: var(--accent-ink);
+}
+
+.inline-error,
+.empty-state,
+.splat-warning {
+  color: #626a6c;
+  background: #ebe8df;
+}
+
+.inline-error,
+.splat-warning {
+  color: #8f3b1b;
+  background: #f9e5da;
+}
+
+.viewport-toolbar {
+  background: #fbfaf5;
+}
+
+.segmented-control,
+.view-switcher,
+.toolbar-button {
+  border-color: var(--line);
+}
+
+.segmented-control button,
+.view-switcher button,
+.toolbar-button,
+.button-pair button,
+.wide-button {
+  background: var(--surface-raised);
+  color: #626a6c;
+}
+
+.segmented-control button,
+.view-switcher button {
+  border-color: var(--line);
+}
+
+.segmented-control button:hover,
+.view-switcher button:hover,
+.toolbar-button:hover,
+.wide-button:hover,
+.button-pair button:hover {
+  background: #f4eee6;
+  color: var(--accent-ink);
+}
+
+kbd {
+  color: #838a8b;
+}
+
+.metric-chip,
+.viewport-help,
+.scene-label {
+  border-color: #bbb8ae;
+  background: #fffdf8e8;
+  color: #4f585a;
+  box-shadow: 0 4px 16px #4e493b18;
+}
+
+.numeric-field input {
+  border-color: #bbb8ae;
+  background: var(--surface-raised);
+  color: var(--ink-strong);
+}
+
+.numeric-field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px #d75f2b1f;
+}
+
+.wide-button,
+.button-pair button {
+  border-color: #bbb8ae;
+}
+
+.wide-button.danger:hover {
+  border-color: #c18b7f;
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.spec-list div,
+.artifact-link {
+  border-color: #ddd9cf;
+}
+
+.spec-list dd {
+  color: #303739;
+}
+
+.artifact-link:hover {
+  color: var(--accent-hover);
 }
 
 @media (max-width: 980px) {

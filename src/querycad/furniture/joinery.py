@@ -13,6 +13,22 @@ AxisName = Literal["x", "y", "z"]
 
 
 @dataclass(frozen=True)
+class ExternalTargetSpec:
+    """An existing site element that receives furniture fasteners but is not a BOM part."""
+
+    code: str
+    description: str
+    notes: str = ""
+
+    def as_dict(self) -> dict[str, str]:
+        return {
+            "code": self.code,
+            "description": self.description,
+            "notes": self.notes,
+        }
+
+
+@dataclass(frozen=True)
 class FastenerSpec:
     """One fully specified hardware item used by a design."""
 
@@ -144,6 +160,7 @@ class JoinerySchedule:
 
     status: str = "unspecified"
     notes: tuple[str, ...] = ()
+    external_targets: tuple[ExternalTargetSpec, ...] = ()
     fasteners: tuple[FastenerSpec, ...] = ()
     drill_operations: tuple[DrillOperation, ...] = ()
     joints: tuple[JointSpec, ...] = ()
@@ -156,6 +173,16 @@ class JoinerySchedule:
 
     def validate(self, parts: Iterable[Part]) -> None:
         part_by_number = {part.number: part for part in parts}
+        external_target_by_code: dict[str, ExternalTargetSpec] = {}
+        for target in self.external_targets:
+            if not target.code.strip() or not target.description.strip():
+                raise ValueError("external target code and description cannot be empty")
+            if target.code in part_by_number:
+                raise ValueError(f"external target conflicts with part number: {target.code}")
+            if target.code in external_target_by_code:
+                raise ValueError(f"duplicate external target: {target.code}")
+            external_target_by_code[target.code] = target
+
         fastener_by_code: dict[str, FastenerSpec] = {}
         for fastener in self.fasteners:
             if not fastener.code.strip():
@@ -240,7 +267,10 @@ class JoinerySchedule:
             joint_ids.add(joint.joint_id)
             if joint.source_part_number not in part_by_number:
                 raise ValueError(f"joint {joint.joint_id} has an unknown source part")
-            if joint.target_part_number not in part_by_number:
+            if (
+                joint.target_part_number not in part_by_number
+                and joint.target_part_number not in external_target_by_code
+            ):
                 raise ValueError(f"joint {joint.joint_id} has an unknown target part")
             if joint.fastener_code not in fastener_by_code:
                 raise ValueError(f"joint {joint.joint_id} has an unknown fastener")
@@ -282,12 +312,17 @@ class JoineryPlan:
         self._quantity_for_part = quantity_for_part
         self._status = status
         self._notes = notes
+        self._external_targets: list[ExternalTargetSpec] = []
         self._fasteners: list[FastenerSpec] = []
         self._operations: list[DrillOperation] = []
         self._joints: list[JointSpec] = []
 
     def add_fasteners(self, *fasteners: FastenerSpec) -> JoineryPlan:
         self._fasteners.extend(fasteners)
+        return self
+
+    def add_external_targets(self, *targets: ExternalTargetSpec) -> JoineryPlan:
+        self._external_targets.extend(targets)
         return self
 
     def add_operation(self, operation: DrillOperation) -> JoineryPlan:
@@ -356,6 +391,7 @@ class JoineryPlan:
         return JoinerySchedule(
             status=self._status,
             notes=self._notes,
+            external_targets=tuple(self._external_targets),
             fasteners=tuple(self._fasteners),
             drill_operations=tuple(self._operations),
             joints=tuple(self._joints),

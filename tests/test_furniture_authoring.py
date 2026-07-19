@@ -6,6 +6,7 @@ from querycad.furniture import (
     Design,
     DrillOperation,
     DrillPoint,
+    ExternalTargetSpec,
     FastenerSpec,
     JoineryPlan,
     PartCatalog,
@@ -119,6 +120,66 @@ def test_joinery_plan_derives_hardware_from_drill_points_and_occurrences() -> No
 
     assert design.joinery.hardware_quantities() == {"PH-38": 4}
     assert design.joinery.joints[0].quantity == 4
+
+
+def test_joinery_plan_accepts_declared_site_targets_without_bom_parts() -> None:
+    catalog = PartCatalog()
+    rail = catalog.define(
+        number="MOUNTING-RAIL-001",
+        description="Wall mounting rail",
+        material="oak",
+        shape=stock_box(400, 18, 50),
+        stock_size_mm=(400, 18, 50),
+    )
+    rail.place("mounting_rail")
+    fastener = FastenerSpec(
+        code="STRUCT-90",
+        description="Structural timber screw",
+        length_mm=90,
+        nominal_size="6 mm",
+        head="washer",
+        drive="T30",
+        thread="wood",
+        finish="black",
+        application="Existing timber post",
+    )
+    operation = DrillOperation(
+        operation_id="DR-MOUNTING-RAIL",
+        part_number="MOUNTING-RAIL-001",
+        label="Site anchors",
+        kind="pilot",
+        face="front",
+        view_axes=("x", "z"),
+        diameter_mm=4,
+        points=(DrillPoint((200, 9, 25), (0, -1, 0)),),
+        fastener_code=fastener.code,
+        counts_fastener=True,
+    )
+    schedule = (
+        JoineryPlan(catalog.quantity, status="site_verification_required")
+        .add_external_targets(ExternalTargetSpec("SITE-POST", "Verified existing timber post"))
+        .add_fasteners(fastener)
+        .add_connection(
+            joint_id="J-SITE",
+            description="Rail to existing post",
+            target_part_number="SITE-POST",
+            operation=operation,
+            assembly_step=1,
+        )
+        .build()
+    )
+    design = Design(
+        name="site-target-test",
+        model="test",
+        parameters={},
+        parts=catalog.freeze(),
+        joinery=schedule,
+    )
+
+    design.validate()
+
+    assert design.joinery.hardware_quantities() == {"STRUCT-90": 1}
+    assert all(part.number != "SITE-POST" for part in design.parts)
 
 
 def test_linear_centers_preserves_equal_spacing_and_clearance() -> None:

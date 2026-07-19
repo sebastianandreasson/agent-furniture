@@ -174,6 +174,42 @@ describe('parseManifest', () => {
     })
   })
 
+  it('allows declared site targets without adding fake BOM parts', () => {
+    const manifest = parseManifest({
+      schema_version: 1,
+      name: 'entryway-bench',
+      model: 'entryway_bench',
+      units: 'mm',
+      part_occurrences: 4,
+      parts: [PART],
+      joinery: {
+        ...JOINERY,
+        external_targets: [
+          {
+            code: 'SITE-POST',
+            description: 'Verified existing timber post',
+            notes: 'Do not anchor into brick.',
+          },
+        ],
+        joints: [
+          {
+            ...JOINERY.joints[0],
+            target_part_number: 'SITE-POST',
+          },
+        ],
+      },
+    })
+
+    expect(manifest.joinery.externalTargets).toEqual([
+      {
+        code: 'SITE-POST',
+        description: 'Verified existing timber post',
+        notes: 'Do not anchor into brick.',
+      },
+    ])
+    expect(manifest.parts).toHaveLength(1)
+  })
+
   it('rejects joinery whose hardware total disagrees with its joints', () => {
     const joinery = structuredClone(JOINERY)
     joinery.fasteners[0].quantity = 3

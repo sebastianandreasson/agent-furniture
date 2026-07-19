@@ -68,6 +68,12 @@ export type ManifestFastener = {
   notes: string
 }
 
+export type ManifestExternalTarget = {
+  code: string
+  description: string
+  notes: string
+}
+
 export type ManifestDrillPoint = {
   positionMm: Vector3Tuple
   axis: Vector3Tuple
@@ -110,6 +116,7 @@ export type ManifestJoint = {
 export type ManifestJoinery = {
   status: string
   notes: string[]
+  externalTargets: ManifestExternalTarget[]
   fasteners: ManifestFastener[]
   drillOperations: ManifestDrillOperation[]
   joints: ManifestJoint[]

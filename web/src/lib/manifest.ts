@@ -4,6 +4,7 @@ import type {
   ColorTuple,
   FurnitureManifest,
   ManifestDrillOperation,
+  ManifestExternalTarget,
   ManifestFastener,
   ManifestJoinery,
   ManifestJoint,
@@ -133,6 +134,24 @@ function parseFastener(value: unknown): ManifestFastener {
   }
 }
 
+function parseExternalTarget(value: unknown): ManifestExternalTarget {
+  if (
+    !isRecord(value) ||
+    typeof value.code !== 'string' ||
+    !value.code.trim() ||
+    typeof value.description !== 'string' ||
+    !value.description.trim() ||
+    typeof value.notes !== 'string'
+  ) {
+    throw new Error('The build manifest contains an invalid external target.')
+  }
+  return {
+    code: value.code,
+    description: value.description,
+    notes: value.notes,
+  }
+}
+
 function parseDrillOperation(value: unknown): ManifestDrillOperation {
   const axes = new Set<AxisName>(['x', 'y', 'z'])
   if (
@@ -253,6 +272,7 @@ function parseJoinery(value: unknown, parts: ManifestPart[]): ManifestJoinery {
     return {
       status: 'unspecified',
       notes: [],
+      externalTargets: [],
       fasteners: [],
       drillOperations: [],
       joints: [],
@@ -270,9 +290,21 @@ function parseJoinery(value: unknown, parts: ManifestPart[]): ManifestJoinery {
     throw new Error('The build manifest contains an invalid joinery schedule.')
   }
   const fasteners = value.fasteners.map(parseFastener)
+  const externalTargets = Array.isArray(value.external_targets)
+    ? value.external_targets.map(parseExternalTarget)
+    : []
   const drillOperations = value.drill_operations.map(parseDrillOperation)
   const joints = value.joints.map(parseJoint)
   const partNumbers = new Set(parts.map((part) => part.partNumber))
+  const externalTargetCodes = new Set(
+    externalTargets.map((target) => target.code),
+  )
+  if (
+    externalTargetCodes.size !== externalTargets.length ||
+    [...externalTargetCodes].some((code) => partNumbers.has(code))
+  ) {
+    throw new Error('The joinery schedule has conflicting external targets.')
+  }
   const fastenerCodes = new Set(fasteners.map((fastener) => fastener.code))
   const operationIds = new Set(
     drillOperations.map((operation) => operation.operationId),
@@ -287,7 +319,8 @@ function parseJoinery(value: unknown, parts: ManifestPart[]): ManifestJoinery {
     joints.some(
       (joint) =>
         !partNumbers.has(joint.sourcePartNumber) ||
-        !partNumbers.has(joint.targetPartNumber) ||
+        (!partNumbers.has(joint.targetPartNumber) &&
+          !externalTargetCodes.has(joint.targetPartNumber)) ||
         !fastenerCodes.has(joint.fastenerCode) ||
         joint.drillOperationIds.some(
           (operationId) => !operationIds.has(operationId),
@@ -318,6 +351,7 @@ function parseJoinery(value: unknown, parts: ManifestPart[]): ManifestJoinery {
   return {
     status: value.status,
     notes: value.notes,
+    externalTargets,
     fasteners,
     drillOperations,
     joints,

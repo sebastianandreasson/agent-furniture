@@ -6,7 +6,7 @@ import { formatModelName } from './format'
 const LAYERS = [
   ['splat', 'Starter splat', 'Online visual reference'],
   ['furniture', 'Furniture', 'Exact CadQuery preview'],
-  ['room', 'Room proxy', 'Metric collision layer'],
+  ['room', 'White room', 'Neutral contrast backdrop'],
   ['grid', '100 mm grid', '1 m major divisions'],
 ] as const
 

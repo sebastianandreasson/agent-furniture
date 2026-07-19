@@ -90,6 +90,7 @@ def _manifest(design: Design, artifacts: Iterable[Path], root: Path) -> dict[str
         "joinery": {
             "status": design.joinery.status,
             "notes": list(design.joinery.notes),
+            "external_targets": [target.as_dict() for target in design.joinery.external_targets],
             "fasteners": _hardware_rows(design),
             "drill_operations": [
                 operation.as_dict(part_quantities[operation.part_number])

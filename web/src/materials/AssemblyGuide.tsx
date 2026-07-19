@@ -89,6 +89,11 @@ export function AssemblyGuide({
                         {part.partNumber} ×{part.quantity}
                       </span>
                     ))}
+                    {step.externalTargets.map((target) => (
+                      <span key={target.code} title={target.notes}>
+                        Existing: {target.description}
+                      </span>
+                    ))}
                   </span>
                   <small>{step.instruction}</small>
                 </span>

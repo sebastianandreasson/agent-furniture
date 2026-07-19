@@ -32,17 +32,18 @@ export const EditorScene = memo(function EditorScene({
       gl={{ antialias: true, alpha: false }}
       onPointerMissed={() => undefined}
     >
-      <color attach="background" args={['#0d1116']} />
-      <fog attach="fog" args={['#0d1116', 6500, 12000]} />
-      <ambientLight intensity={1.15} />
+      <color attach="background" args={['#f3f2ee']} />
+      <fog attach="fog" args={['#f3f2ee', 7000, 12500]} />
+      <ambientLight intensity={1.65} />
       <directionalLight
         castShadow
         position={[2200, 4200, 1800]}
-        intensity={2.4}
+        intensity={3.15}
         shadow-mapSize={[2048, 2048]}
         shadow-camera-far={10000}
       />
-      <hemisphereLight args={['#dfe9f3', '#1c232b', 0.85]} />
+      <directionalLight position={[-1800, 2100, -1400]} intensity={1.25} />
+      <hemisphereLight args={['#ffffff', '#d8d5ce', 1.1]} />
 
       {layers.room && <RoomProxy showGrid={layers.grid} />}
       {layers.splat && <StarterSplat onError={onSplatError} />}
@@ -66,7 +67,7 @@ export const EditorScene = memo(function EditorScene({
         <GizmoHelper alignment="bottom-right" margin={[88, 80]}>
           <GizmoViewport
             axisColors={['#ff8f7a', '#83d7a5', '#70a7ff']}
-            labelColor="#e8edf2"
+            labelColor="#26333a"
           />
         </GizmoHelper>
       )}

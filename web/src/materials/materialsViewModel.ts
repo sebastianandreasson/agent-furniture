@@ -1,6 +1,7 @@
 import type {
   FurnitureManifest,
   ManifestDrillOperation,
+  ManifestExternalTarget,
   ManifestFastener,
   ManifestJoint,
   ManifestPart,
@@ -29,6 +30,7 @@ export type AssemblyStep = {
   joints: ManifestJoint[]
   partNumbers: string[]
   parts: ManifestPart[]
+  externalTargets: ManifestExternalTarget[]
   fasteners: StepFastener[]
   drillOperations: ManifestDrillOperation[]
   notes: string[]
@@ -100,6 +102,9 @@ function buildAssemblySteps(manifest: FurnitureManifest) {
   const fastenerByCode = new Map(
     manifest.joinery.fasteners.map((fastener) => [fastener.code, fastener]),
   )
+  const externalTargetByCode = new Map(
+    manifest.joinery.externalTargets.map((target) => [target.code, target]),
+  )
   const operationById = new Map(
     manifest.joinery.drillOperations.map((operation) => [
       operation.operationId,
@@ -143,6 +148,9 @@ function buildAssemblySteps(manifest: FurnitureManifest) {
       const parts = partNumbers
         .map((partNumber) => partByNumber.get(partNumber))
         .filter((part): part is ManifestPart => !!part)
+      const externalTargets = partNumbers
+        .map((partNumber) => externalTargetByCode.get(partNumber))
+        .filter((target): target is ManifestExternalTarget => !!target)
       const notes = unique(joints.map((joint) => joint.notes).filter(Boolean))
 
       return {
@@ -152,6 +160,7 @@ function buildAssemblySteps(manifest: FurnitureManifest) {
         joints,
         partNumbers,
         parts,
+        externalTargets,
         fasteners: [...quantities.entries()].map(([code, quantity]) => ({
           code,
           quantity,
