@@ -24,10 +24,11 @@ an empty `parameters` object so edits to Python defaults appear immediately in t
   positions to make a masonry-grid rhythm and reduce unsupported spans.
 - The lower cabinets have two, two, and one traditional framed doors from left to right. The lone
   right-bay door is left-hinged with its knob on the right.
+- The lower cabinet counter, recessed plinth, and finished front continue across both internal post
+  zones. Each post zone receives a matching framed inset panel that is fixed shut, has no knob or
+  hinges, and does not imply usable storage behind the existing timber.
 - Existing vertical posts receive matching oak cladding. At every shelf course, each internal post
   receives a shallow ledge and lip for one front-facing book.
-- The posts remain visible below counter height; no deep fascia projects from them to the cabinet
-  front plane.
 - There are no back panels. The finish is dark stained oak, with oak-veneered plywood for carcass
   panels and aged-brass knobs.
 - Furniture restraint is limited to verified existing vertical timber and the top horizontal beam.

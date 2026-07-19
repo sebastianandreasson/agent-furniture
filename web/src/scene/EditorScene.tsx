@@ -7,6 +7,7 @@ import { CameraRig } from './CameraRig'
 import { FurnitureModel } from './FurnitureModel'
 import { RoomProxy } from './RoomProxy'
 import { StarterSplat } from './StarterSplat'
+import { StudioLighting } from './StudioLighting'
 
 export const EditorScene = memo(function EditorScene({
   design,
@@ -21,7 +22,7 @@ export const EditorScene = memo(function EditorScene({
 
   return (
     <Canvas
-      shadows="basic"
+      shadows="soft"
       dpr={[1, 1.75]}
       camera={{
         position: [2700, 1900, 3000],
@@ -34,16 +35,7 @@ export const EditorScene = memo(function EditorScene({
     >
       <color attach="background" args={['#f3f2ee']} />
       <fog attach="fog" args={['#f3f2ee', 7000, 12500]} />
-      <ambientLight intensity={1.65} />
-      <directionalLight
-        castShadow
-        position={[2200, 4200, 1800]}
-        intensity={3.15}
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-far={10000}
-      />
-      <directionalLight position={[-1800, 2100, -1400]} intensity={1.25} />
-      <hemisphereLight args={['#ffffff', '#d8d5ce', 1.1]} />
+      <StudioLighting />
 
       {layers.room && <RoomProxy showGrid={layers.grid} />}
       {layers.splat && <StarterSplat onError={onSplatError} />}

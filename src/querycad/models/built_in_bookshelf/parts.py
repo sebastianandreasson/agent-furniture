@@ -23,6 +23,18 @@ POST_CLADDINGS = {
     "left": "STRUCTURAL-POST-CLADDING-LEFT-001",
     "middle": "STRUCTURAL-POST-CLADDING-MIDDLE-001",
 }
+POST_COUNTER_BRIDGES = {
+    "left": "POST-CABINET-COUNTER-BRIDGE-LEFT-001",
+    "middle": "POST-CABINET-COUNTER-BRIDGE-MIDDLE-001",
+}
+POST_FIXED_PANELS = {
+    "left": "POST-CABINET-FIXED-PANEL-LEFT-001",
+    "middle": "POST-CABINET-FIXED-PANEL-MIDDLE-001",
+}
+POST_PLINTH_BRIDGES = {
+    "left": "POST-CABINET-PLINTH-BRIDGE-LEFT-001",
+    "middle": "POST-CABINET-PLINTH-BRIDGE-MIDDLE-001",
+}
 POST_DISPLAY_LEDGES = {
     "left": "POST-DISPLAY-LEDGE-LEFT-001",
     "middle": "POST-DISPLAY-LEDGE-MIDDLE-001",
@@ -114,6 +126,37 @@ def _framed_door(
         )
     )
     return frame.union(panel)
+
+
+def _fixed_post_panel(
+    width: float,
+    spec: BuiltInBookshelfSpec,
+    layout: BuiltInLayout,
+) -> cq.Workplane:
+    """Make a non-opening framed panel aligned with the operable cabinet doors."""
+
+    panel_width = width - 2 * spec.door_gap
+    panel = _framed_door(panel_width, layout.door_height, spec).translate(
+        (0.0, 0.0, spec.face_frame_width + spec.door_gap)
+    )
+    rail_y = -(spec.door_thickness - spec.face_frame_thickness) / 2
+    lower_rail = stock_box(
+        width,
+        spec.face_frame_thickness,
+        spec.face_frame_width,
+    ).translate((0.0, rail_y, 0.0))
+    upper_rail = stock_box(
+        width,
+        spec.face_frame_thickness,
+        spec.face_frame_width,
+    ).translate(
+        (
+            0.0,
+            rail_y,
+            layout.face_frame_height - spec.face_frame_width,
+        )
+    )
+    return panel.union(lower_rail).union(upper_rail)
 
 
 def _knob(spec: BuiltInBookshelfSpec) -> cq.Workplane:
@@ -361,6 +404,65 @@ def add_base_cabinets(
                 bay.center_x,
                 (-spec.lower_depth + spec.plinth_recess + spec.base_panel_thickness / 2),
                 0.0,
+            ),
+        )
+
+    for post in layout.posts:
+        bridge_width = layout.cabinet_bridge_width(post.name)
+        catalog.define(
+            number=POST_COUNTER_BRIDGES[post.name],
+            description=f"Counter bridge continuing over the {post.name} existing post",
+            material=spec.finish_material,
+            shape=stock_box(bridge_width, spec.lower_depth, spec.counter_thickness),
+            stock_size_mm=(bridge_width, spec.lower_depth, spec.counter_thickness),
+            color=DARK_OAK,
+        ).place(
+            f"post_counter_bridge_{post.name}",
+            (
+                post.center_x,
+                _depth_center(spec.lower_depth),
+                spec.cabinet_top_height - spec.counter_thickness,
+            ),
+        )
+        catalog.define(
+            number=POST_PLINTH_BRIDGES[post.name],
+            description=f"Recessed plinth bridge across the {post.name} existing post",
+            material=spec.finish_material,
+            shape=stock_box(
+                bridge_width,
+                spec.base_panel_thickness,
+                spec.plinth_height,
+            ),
+            stock_size_mm=(
+                bridge_width,
+                spec.base_panel_thickness,
+                spec.plinth_height,
+            ),
+            color=DARK_OAK,
+        ).place(
+            f"post_plinth_bridge_{post.name}",
+            (
+                post.center_x,
+                (-spec.lower_depth + spec.plinth_recess + spec.base_panel_thickness / 2),
+                0.0,
+            ),
+        )
+        catalog.define(
+            number=POST_FIXED_PANELS[post.name],
+            description=(
+                f"Non-opening framed inset panel continuing the cabinets across the "
+                f"{post.name} post"
+            ),
+            material=spec.finish_material,
+            shape=_fixed_post_panel(bridge_width, spec, layout),
+            stock_size_mm=(bridge_width, spec.door_thickness, layout.face_frame_height),
+            color=DARK_OAK,
+        ).place(
+            f"post_fixed_panel_{post.name}",
+            (
+                post.center_x,
+                _front_center(spec.lower_depth, spec.door_thickness),
+                spec.plinth_height,
             ),
         )
 

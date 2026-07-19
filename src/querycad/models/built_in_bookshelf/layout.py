@@ -223,3 +223,9 @@ class BuiltInLayout:
 
     def doors_for_bay(self, name: str) -> tuple[DoorLayout, ...]:
         return tuple(door for door in self.doors if door.bay_name == name)
+
+    def cabinet_bridge_width(self, post_name: str) -> float:
+        """Return the full fitted-cabinet gap spanning an internal site post."""
+
+        post_index = next(index for index, post in enumerate(self.posts) if post.name == post_name)
+        return self.bays[post_index + 1].fitted_left_x - self.bays[post_index].fitted_right_x

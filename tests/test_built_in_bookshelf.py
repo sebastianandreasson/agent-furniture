@@ -47,8 +47,8 @@ def test_default_geometry_and_bom_quantities() -> None:
             spec.height_under_beam,
         )
     )
-    assert len(design.parts) == 38
-    assert design.total_occurrences() == 90
+    assert len(design.parts) == 44
+    assert design.total_occurrences() == 96
     quantities = {part.number: part.quantity for part in design.parts}
     assert quantities["BASE-CARCASS-VERTICAL-001"] == 8
     assert quantities["FACE-FRAME-STILE-001"] == 8
@@ -65,6 +65,8 @@ def test_default_geometry_and_bom_quantities() -> None:
     assert quantities["POST-DISPLAY-LIP-MIDDLE-001"] == spec.shelf_count
     assert quantities["STRUCTURAL-POST-CLADDING-LEFT-001"] == 1
     assert quantities["STRUCTURAL-POST-CLADDING-MIDDLE-001"] == 1
+    assert quantities["POST-CABINET-FIXED-PANEL-LEFT-001"] == 1
+    assert quantities["POST-CABINET-FIXED-PANEL-MIDDLE-001"] == 1
     assert all("POST-BASE-FASCIA" not in part.number for part in design.parts)
     assert "UPPER-SHELF-SIDE-CLEAT-001" not in quantities
     assert all("BACK" not in part.number for part in design.parts)
@@ -125,6 +127,44 @@ def test_full_height_core_uprights_replace_short_shelf_cleats() -> None:
     assert parts["UPPER-SHELF-LEFT-001"].stock_size_mm[1] == pytest.approx(160.0)
 
 
+def test_lower_cabinet_run_bridges_both_internal_posts() -> None:
+    spec = BuiltInBookshelfSpec()
+    layout = BuiltInLayout.from_spec(spec)
+    design = build_built_in_bookshelf("test-bookshelf", spec.as_dict())
+    parts = {part.number: part for part in design.parts}
+
+    assert [layout.cabinet_bridge_width(post.name) for post in layout.posts] == pytest.approx(
+        (426.0, 206.0)
+    )
+    assert parts["POST-CABINET-COUNTER-BRIDGE-LEFT-001"].stock_size_mm == pytest.approx(
+        (426.0, 330.0, 28.0)
+    )
+    assert parts["POST-CABINET-COUNTER-BRIDGE-MIDDLE-001"].stock_size_mm == pytest.approx(
+        (206.0, 330.0, 28.0)
+    )
+    assert parts["POST-CABINET-FIXED-PANEL-LEFT-001"].stock_size_mm == pytest.approx(
+        (426.0, 22.0, layout.face_frame_height)
+    )
+    assert parts["POST-CABINET-FIXED-PANEL-MIDDLE-001"].stock_size_mm == pytest.approx(
+        (206.0, 22.0, layout.face_frame_height)
+    )
+    assert all(
+        parts[number].shape.val().isValid()
+        for number in (
+            "POST-CABINET-FIXED-PANEL-LEFT-001",
+            "POST-CABINET-FIXED-PANEL-MIDDLE-001",
+        )
+    )
+    fixed_panel_operations = [
+        operation
+        for operation in design.joinery.drill_operations
+        if operation.part_number.startswith("POST-CABINET-FIXED-PANEL-")
+    ]
+    assert len(fixed_panel_operations) == 2
+    assert all(len(operation.points) == 4 for operation in fixed_panel_operations)
+    assert all(operation.fastener_code == "CAB-5X50-T20" for operation in fixed_panel_operations)
+
+
 def test_masonry_dividers_stagger_and_support_both_wide_bays() -> None:
     spec = BuiltInBookshelfSpec()
     layout = BuiltInLayout.from_spec(spec)
@@ -182,7 +222,7 @@ def test_site_anchors_are_hardware_targets_not_cut_list_parts() -> None:
     }
     assert all(part.number not in {SITE_VERTICAL_POSTS, SITE_TOP_BEAM} for part in design.parts)
     assert design.joinery.hardware_quantities() == {
-        "CAB-5X50-T20": 68,
+        "CAB-5X50-T20": 76,
         "SHELF-4.5X45-T20": 40,
         "CORE-SHELF-5X60-T25": 48,
         "STRUCT-6X90-T30": 73,

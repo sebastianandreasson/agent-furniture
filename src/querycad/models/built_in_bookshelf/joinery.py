@@ -28,6 +28,7 @@ from querycad.models.built_in_bookshelf.parts import (
     POST_CLADDINGS,
     POST_DISPLAY_LEDGES,
     POST_DISPLAY_LIPS,
+    POST_FIXED_PANELS,
     SHELVES,
 )
 from querycad.models.built_in_bookshelf.spec import BuiltInBookshelfSpec
@@ -56,7 +57,7 @@ def _fasteners(spec: BuiltInBookshelfSpec) -> tuple[FastenerSpec, ...]:
             drive="T20",
             thread="partial wood thread",
             finish="black oxide",
-            application="Base carcass, face frame, and staggered divider assembly",
+            application="Base carcass, face frame, fixed post panels, and divider assembly",
             notes="Confirm pilot size and edge distance on matching oak and plywood offcuts.",
         ),
         FastenerSpec(
@@ -198,6 +199,44 @@ def _face_frame_operation(
         fastener_code="CAB-5X50-T20",
         counts_fastener=True,
         notes=ASSEMBLY_NOTE,
+    )
+
+
+def _fixed_post_panel_operation(
+    spec: BuiltInBookshelfSpec,
+    layout: BuiltInLayout,
+    post: PostLayout,
+) -> DrillOperation:
+    width = layout.cabinet_bridge_width(post.name)
+    lower_z = spec.face_frame_width + spec.door_gap + 130.0
+    upper_z = layout.face_frame_height - lower_z
+    return DrillOperation(
+        operation_id=f"DR-POST-CABINET-FIXED-PANEL-{post.name.upper()}",
+        part_number=POST_FIXED_PANELS[post.name],
+        label=f"Concealed side pilots fixing the {post.name} post panel between cabinet stiles",
+        kind="pilot",
+        face="concealed side edges",
+        view_axes=("x", "z"),
+        diameter_mm=spec.pilot_hole_diameter,
+        depth_mm=spec.cabinet_screw_length,
+        points=tuple(
+            DrillPoint(
+                (x, spec.door_thickness / 2, z),
+                axis,
+                f"{side} stile fixing at {z:g} mm",
+            )
+            for x, axis, side in (
+                (0.0, (-1.0, 0.0, 0.0), "left"),
+                (width, (1.0, 0.0, 0.0), "right"),
+            )
+            for z in (lower_z, upper_z)
+        ),
+        fastener_code="CAB-5X50-T20",
+        counts_fastener=True,
+        notes=(
+            "Fit this as a fixed decorative panel; it has no hinges, knob, or usable cabinet "
+            "volume behind it. Drive screws from concealed side edges into the adjacent stiles."
+        ),
     )
 
 
@@ -552,6 +591,14 @@ def build_joinery_schedule(
         operation=_face_frame_operation(spec, layout),
         assembly_step=1,
     )
+    for post in layout.posts:
+        plan.add_connection(
+            joint_id=f"J-POST-CABINET-FIXED-PANEL-{post.name.upper()}",
+            description=f"Fixed inset panel across the {post.name} post zone",
+            target_part_number=FACE_FRAME_STILE,
+            operation=_fixed_post_panel_operation(spec, layout, post),
+            assembly_step=1,
+        )
 
     for post in layout.posts:
         plan.add_connection(
