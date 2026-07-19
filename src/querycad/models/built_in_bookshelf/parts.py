@@ -550,7 +550,7 @@ def add_base_cabinets(
         stock_size_mm=(spec.knob_diameter, spec.knob_projection, spec.knob_diameter),
         color=BRASS,
     )
-    knob_center_z = layout.door_bottom_z + layout.door_height * 0.58
+    knob_center_z = layout.door_bottom_z + layout.door_height * spec.knob_height_ratio
     for door in layout.doors:
         knob.place(
             f"knob_{door.name.removeprefix('door_')}",

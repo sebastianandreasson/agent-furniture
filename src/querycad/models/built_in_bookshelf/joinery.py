@@ -533,7 +533,11 @@ def _door_operations(
             depth_mm=spec.door_thickness,
             points=(
                 DrillPoint(
-                    (knob_x, spec.door_thickness / 2, layout.door_height * 0.58),
+                    (
+                        knob_x,
+                        spec.door_thickness / 2,
+                        layout.door_height * spec.knob_height_ratio,
+                    ),
                     (0.0, 1.0, 0.0),
                     "knob centre",
                 ),

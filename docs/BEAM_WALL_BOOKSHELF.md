@@ -22,8 +22,9 @@ an empty `parameters` object so edits to Python defaults appear immediately in t
   uprights. The shelves fasten into them directly; the previous short shelf-cleat concept is removed.
 - Each opening has four shelf courses at a 300 mm pitch. The two wide openings use alternating divider
   positions to make a masonry-grid rhythm and reduce unsupported spans.
-- The lower cabinets have two, two, and one traditional framed doors from left to right. The lone
-  right-bay door is left-hinged with its knob on the right.
+- The lower cabinets have two, two, and one traditional framed doors from left to right. Every knob
+  is centred vertically and on its 55 mm door stile. The lone right-bay door is right-hinged with
+  its knob on the left.
 - The lower cabinet counter, recessed plinth, and finished front continue across both internal post
   zones. Each post zone receives a matching framed inset panel that is fixed shut, has no knob or
   hinges, and does not imply usable storage behind the existing timber.

@@ -158,8 +158,8 @@ class BuiltInLayout:
                         bay_name=bay.name,
                         width=door_width,
                         center_x=center_x,
-                        knob_x=center_x + door_width / 2 - spec.knob_edge_inset,
-                        hinge_side="left",
+                        knob_x=center_x - door_width / 2 + spec.knob_edge_inset,
+                        hinge_side="right",
                     )
                 )
                 continue

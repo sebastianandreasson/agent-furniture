@@ -47,7 +47,8 @@ class BuiltInBookshelfSpec(FurnitureSpec):
     door_panel_recess: float = 6.0
     knob_diameter: float = 18.0
     knob_projection: float = 18.0
-    knob_edge_inset: float = 42.0
+    knob_edge_inset: float = 27.5
+    knob_height_ratio: float = 0.5
 
     post_trim_thickness: float = 18.0
     display_ledge_depth: float = 55.0
@@ -172,6 +173,11 @@ class BuiltInBookshelfSpec(FurnitureSpec):
             raise ValueError("door_frame_width leaves no usable recessed door panel")
         if self.knob_projection < self.knob_diameter / 2:
             raise ValueError("knob_projection is too small for the selected knob diameter")
+        knob_radius = self.knob_diameter / 2
+        if not knob_radius <= self.knob_edge_inset <= self.door_frame_width - knob_radius:
+            raise ValueError("knob_edge_inset must keep the knob entirely on the door frame stile")
+        if not 0.25 <= self.knob_height_ratio <= 0.75:
+            raise ValueError("knob_height_ratio must remain between 0.25 and 0.75")
 
         minimum_opening = 3 * self.face_frame_width + 2 * self.door_frame_width + 4 * self.door_gap
         if min(self.clear_opening_widths[:2]) <= minimum_opening:

@@ -29,6 +29,8 @@ def test_default_spec_preserves_measured_site_envelope() -> None:
     assert spec.clear_opening_widths == (1040.0, 1390.0, 610.0)
     assert spec.shelf_count == 4
     assert spec.shelf_pitch == 300.0
+    assert spec.knob_edge_inset == spec.door_frame_width / 2
+    assert spec.knob_height_ratio == 0.5
     assert spec.right_slope_start_x == 150.0
     assert spec.right_slope_end_height == 2200.0
     assert "do not anchor into the brick wall" in spec.site_anchor_strategy
@@ -180,22 +182,38 @@ def test_masonry_dividers_stagger_and_support_both_wide_bays() -> None:
     assert all(segment.height >= 276.0 for segment in layout.divider_segments)
 
 
-def test_single_right_door_is_left_hinged_with_knob_on_right() -> None:
+def test_knobs_are_centered_and_single_right_door_has_knob_on_left() -> None:
     spec = BuiltInBookshelfSpec()
     layout = BuiltInLayout.from_spec(spec)
     design = build_built_in_bookshelf("test-bookshelf", spec.as_dict())
     door = layout.doors_for_bay("right")[0]
 
-    assert door.hinge_side == "left"
-    assert door.knob_x == pytest.approx(door.center_x + door.width / 2 - spec.knob_edge_inset)
+    assert door.hinge_side == "right"
+    assert door.knob_x == pytest.approx(door.center_x - door.width / 2 + spec.knob_edge_inset)
 
     operations = {
         operation.operation_id: operation for operation in design.joinery.drill_operations
     }
     hinge = operations["DR-DOOR-RIGHT-HINGES"]
     knob = operations["DR-DOOR-RIGHT-KNOB"]
-    assert {point.position_mm[0] for point in hinge.points} == {24.0}
-    assert knob.points[0].position_mm[0] == pytest.approx(door.width - spec.knob_edge_inset)
+    assert {point.position_mm[0] for point in hinge.points} == {door.width - 24.0}
+    assert knob.points[0].position_mm[0] == pytest.approx(spec.knob_edge_inset)
+
+    knob_operations = [
+        operation
+        for operation in design.joinery.drill_operations
+        if operation.operation_id.endswith("-KNOB")
+    ]
+    assert len(knob_operations) == 5
+    assert {
+        point.position_mm[2] for operation in knob_operations for point in operation.points
+    } == {layout.door_height / 2}
+
+    knob_part = next(part for part in design.parts if part.number == "DOOR-KNOB-001")
+    expected_placement_z = layout.door_bottom_z + layout.door_height / 2 - spec.knob_diameter / 2
+    assert {placement.translation_mm[2] for placement in knob_part.placements} == {
+        expected_placement_z
+    }
 
 
 def test_right_crown_follows_slope_without_clipping_the_shelves() -> None:
