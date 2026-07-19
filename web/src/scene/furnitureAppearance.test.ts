@@ -58,4 +58,24 @@ describe('furniture appearance', () => {
 
     copy.dispose()
   })
+
+  it('isolates material instances so individual part meshes can be highlighted', () => {
+    const source = new Group()
+    const sharedMaterial = new MeshStandardMaterial({ color: '#4b2412' })
+    const selected = new Mesh(new BoxGeometry(30, 200, 2400), sharedMaterial)
+    const unselected = new Mesh(new BoxGeometry(1034, 400, 28), sharedMaterial)
+    selected.name = 'core_upright_left_left'
+    unselected.name = 'counter_left'
+    source.add(selected, unselected)
+
+    const copy = copyFurnitureScene(source)
+    const copiedSelected = copy.scene.getObjectByName(
+      'core_upright_left_left',
+    ) as Mesh
+    const copiedUnselected = copy.scene.getObjectByName('counter_left') as Mesh
+
+    expect(copiedSelected.material).not.toBe(copiedUnselected.material)
+
+    copy.dispose()
+  })
 })

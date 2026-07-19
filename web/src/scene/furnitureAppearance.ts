@@ -140,8 +140,6 @@ export function copyFurnitureScene(
   const darkest = lightnesses.length > 0 ? Math.min(...lightnesses) : 1
   const lightest = lightnesses.length > 0 ? Math.max(...lightnesses) : 1
   const lightnessRange = lightest - darkest
-  const woodMaterialCopies = new Map<Material, Material>()
-  const plainMaterialCopies = new Map<Material, Material>()
   const geometryCopies = new Map<BufferGeometry, BufferGeometry>()
 
   scene.traverse((object) => {
@@ -162,22 +160,17 @@ export function copyFurnitureScene(
     }
 
     const copyMaterial = (source: Material) => {
-      const materialCopies = isWood ? woodMaterialCopies : plainMaterialCopies
-      let material = materialCopies.get(source)
-      if (!material) {
-        material = source.clone()
-        if (isWood && woodTextures) {
-          const relativeLightness =
-            lightnessRange > 0
-              ? (materialLightness(source) - darkest) / lightnessRange
-              : 1
-          const tint =
-            PANEL_TINT_FLOOR + (1 - PANEL_TINT_FLOOR) * relativeLightness
-          configureWoodMaterial(material, woodTextures, tint)
-        }
-        materialCopies.set(source, material)
-        disposableMaterials.add(material)
+      const material = source.clone()
+      if (isWood && woodTextures) {
+        const relativeLightness =
+          lightnessRange > 0
+            ? (materialLightness(source) - darkest) / lightnessRange
+            : 1
+        const tint =
+          PANEL_TINT_FLOOR + (1 - PANEL_TINT_FLOOR) * relativeLightness
+        configureWoodMaterial(material, woodTextures, tint)
       }
+      disposableMaterials.add(material)
       return material
     }
 

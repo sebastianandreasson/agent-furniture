@@ -28,10 +28,11 @@ an empty `parameters` object so edits to Python defaults appear immediately in t
 - The lower cabinet counter, recessed plinth, and finished front continue across both internal post
   zones. Each post zone receives a matching framed inset panel that is fixed shut, has no knob or
   hinges, and does not imply usable storage behind the existing timber.
-- Existing vertical posts receive matching oak cladding above the cabinet counter. At every shelf
-  course, each internal post receives a shallow ledge and lip for one front-facing book. The fixed
-  framed cabinet panels provide the visual treatment below the counter without duplicating cladding
-  inside the cabinet run.
+- Existing vertical posts receive matching oak cladding above the cabinet counter. Each internal
+  post has three shallow ledges and retaining lips for front-facing books. Their top surfaces begin
+  halfway between the first and second regular shelf courses and continue at the regular 300 mm
+  pitch, creating an intentionally offset rhythm. The fixed framed cabinet panels provide the visual
+  treatment below the counter without duplicating cladding inside the cabinet run.
 - There are no back panels. The finish is dark stained oak, with oak-veneered plywood for carcass
   panels and aged-brass knobs.
 - Furniture restraint is limited to verified existing vertical timber and the top horizontal beam.

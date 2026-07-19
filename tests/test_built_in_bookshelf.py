@@ -30,6 +30,8 @@ def test_default_spec_preserves_measured_site_envelope() -> None:
     assert spec.clear_opening_widths == (1040.0, 1390.0, 610.0)
     assert spec.shelf_count == 4
     assert spec.shelf_pitch == 300.0
+    assert spec.post_display_shelf_count == 3
+    assert spec.post_display_offset_ratio == 0.5
     assert spec.knob_edge_inset == spec.door_frame_width / 2
     assert spec.knob_height_ratio == 0.5
     assert spec.right_slope_start_x == 150.0
@@ -51,7 +53,7 @@ def test_default_geometry_and_bom_quantities() -> None:
         )
     )
     assert len(design.parts) == 46
-    assert design.total_occurrences() == 96
+    assert design.total_occurrences() == 92
     quantities = {part.number: part.quantity for part in design.parts}
     assert quantities["BASE-CARCASS-VERTICAL-001"] == 6
     assert quantities["BASE-CARCASS-DIVIDER-001"] == 2
@@ -64,10 +66,10 @@ def test_default_geometry_and_bom_quantities() -> None:
     assert quantities["BOOKCASE-CORE-UPRIGHT-LH-001"] == 3
     assert quantities["BOOKCASE-CORE-UPRIGHT-RH-001"] == 2
     assert quantities["BOOKCASE-CORE-UPRIGHT-RIGHT-SCRIBED-001"] == 1
-    assert quantities["POST-DISPLAY-LEDGE-LEFT-001"] == spec.shelf_count
-    assert quantities["POST-DISPLAY-LEDGE-MIDDLE-001"] == spec.shelf_count
-    assert quantities["POST-DISPLAY-LIP-LEFT-001"] == spec.shelf_count
-    assert quantities["POST-DISPLAY-LIP-MIDDLE-001"] == spec.shelf_count
+    assert quantities["POST-DISPLAY-LEDGE-LEFT-001"] == spec.post_display_shelf_count
+    assert quantities["POST-DISPLAY-LEDGE-MIDDLE-001"] == spec.post_display_shelf_count
+    assert quantities["POST-DISPLAY-LIP-LEFT-001"] == spec.post_display_shelf_count
+    assert quantities["POST-DISPLAY-LIP-MIDDLE-001"] == spec.post_display_shelf_count
     assert quantities["STRUCTURAL-POST-CLADDING-LEFT-001"] == 1
     assert quantities["STRUCTURAL-POST-CLADDING-MIDDLE-001"] == 1
     assert quantities["POST-CABINET-FIXED-PANEL-LEFT-001"] == 1
@@ -215,6 +217,37 @@ def test_post_cladding_only_covers_the_upper_bookcase_zone() -> None:
     )
 
 
+def test_post_display_shelves_are_three_half_pitch_offset_courses() -> None:
+    spec = BuiltInBookshelfSpec()
+    layout = BuiltInLayout.from_spec(spec)
+    design = build_built_in_bookshelf("test-bookshelf", spec.as_dict())
+    parts = {part.number: part for part in design.parts}
+
+    first_regular_shelf_top = layout.shelf_bottoms[0] + spec.shelf_thickness
+    assert layout.post_display_levels == pytest.approx((1174.0, 1474.0, 1774.0))
+    assert layout.post_display_levels[0] - first_regular_shelf_top == pytest.approx(
+        spec.shelf_pitch * spec.post_display_offset_ratio
+    )
+    assert [
+        later - earlier
+        for earlier, later in zip(
+            layout.post_display_levels,
+            layout.post_display_levels[1:],
+            strict=False,
+        )
+    ] == pytest.approx([spec.shelf_pitch, spec.shelf_pitch])
+
+    for post_name in ("LEFT", "MIDDLE"):
+        ledges = parts[f"POST-DISPLAY-LEDGE-{post_name}-001"]
+        lips = parts[f"POST-DISPLAY-LIP-{post_name}-001"]
+        assert [placement.translation_mm[2] for placement in ledges.placements] == pytest.approx(
+            [level - spec.display_ledge_thickness for level in layout.post_display_levels]
+        )
+        assert [placement.translation_mm[2] for placement in lips.placements] == pytest.approx(
+            layout.post_display_levels
+        )
+
+
 def test_default_design_has_no_positive_volume_interferences() -> None:
     design = build_built_in_bookshelf("test-bookshelf", BuiltInBookshelfSpec().as_dict())
 
@@ -314,7 +347,7 @@ def test_site_anchors_are_hardware_targets_not_cut_list_parts() -> None:
     assert all(part.number not in {SITE_VERTICAL_POSTS, SITE_TOP_BEAM} for part in design.parts)
     assert design.joinery.hardware_quantities() == {
         "CAB-5X50-T20": 76,
-        "SHELF-4.5X45-T20": 40,
+        "SHELF-4.5X45-T20": 30,
         "CORE-SHELF-5X60-T25": 48,
         "STRUCT-6X90-T30": 73,
         "HINGE-3.5X16-PZ2": 20,
@@ -371,6 +404,23 @@ def test_rejects_non_integer_shelf_count() -> None:
     values["shelf_count"] = 3.5
 
     with pytest.raises(ValueError, match="shelf_count must be an integer"):
+        BuiltInBookshelfSpec.from_mapping(values)
+
+
+def test_rejects_invalid_post_display_layout() -> None:
+    values = BuiltInBookshelfSpec().as_dict()
+    values["post_display_shelf_count"] = 3.5
+    with pytest.raises(ValueError, match="post_display_shelf_count must be an integer"):
+        BuiltInBookshelfSpec.from_mapping(values)
+
+    values = BuiltInBookshelfSpec().as_dict()
+    values["post_display_offset_ratio"] = 1.0
+    with pytest.raises(ValueError, match="post_display_offset_ratio must remain between"):
+        BuiltInBookshelfSpec.from_mapping(values)
+
+    values = BuiltInBookshelfSpec().as_dict()
+    values["post_display_shelf_count"] = 5
+    with pytest.raises(ValueError, match="post display shelves collide with the crown"):
         BuiltInBookshelfSpec.from_mapping(values)
 
 

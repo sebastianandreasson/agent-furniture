@@ -77,6 +77,7 @@ class BuiltInLayout:
     bays: tuple[BayLayout, ...]
     posts: tuple[PostLayout, ...]
     shelf_bottoms: tuple[float, ...]
+    post_display_levels: tuple[float, ...]
     divider_segments: tuple[DividerLayout, ...]
     doors: tuple[DoorLayout, ...]
     depths: DepthLayout
@@ -141,6 +142,13 @@ class BuiltInLayout:
         shelf_bottoms = tuple(
             spec.cabinet_top_height + spec.shelf_pitch * index
             for index in range(1, spec.shelf_count + 1)
+        )
+        first_shelf_top = shelf_bottoms[0] + spec.shelf_thickness
+        post_display_levels = tuple(
+            first_shelf_top
+            + spec.post_display_offset_ratio * spec.shelf_pitch
+            + index * spec.shelf_pitch
+            for index in range(spec.post_display_shelf_count)
         )
         crown_bottom = spec.height_under_beam - spec.crown_height
         divider_segments: list[DividerLayout] = []
@@ -230,6 +238,7 @@ class BuiltInLayout:
             bays=tuple(bays),
             posts=tuple(posts),
             shelf_bottoms=shelf_bottoms,
+            post_display_levels=post_display_levels,
             divider_segments=tuple(divider_segments),
             doors=tuple(doors),
             depths=DepthLayout(

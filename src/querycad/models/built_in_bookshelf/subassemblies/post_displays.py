@@ -84,13 +84,13 @@ def add_post_displays(
             ),
             color=DARK_OAK,
         )
-        for shelf_index, shelf_bottom in enumerate(layout.shelf_bottoms, start=1):
+        for shelf_index, display_level in enumerate(layout.post_display_levels, start=1):
             ledges.place(
                 f"post_display_ledge_{post.name}_{shelf_index:02d}",
                 (
                     post.center_x,
                     layout.depths.display_ledge_back_y - spec.display_ledge_depth / 2,
-                    shelf_bottom + spec.shelf_thickness - spec.display_ledge_thickness,
+                    display_level - spec.display_ledge_thickness,
                 ),
             )
             lips.place(
@@ -100,6 +100,6 @@ def add_post_displays(
                     layout.depths.display_ledge_back_y
                     - spec.display_ledge_depth
                     + spec.display_lip_thickness / 2,
-                    shelf_bottom + spec.shelf_thickness,
+                    display_level,
                 ),
             )

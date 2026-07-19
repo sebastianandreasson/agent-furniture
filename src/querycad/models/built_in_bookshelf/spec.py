@@ -51,6 +51,8 @@ class BuiltInBookshelfSpec(FurnitureSpec):
     knob_height_ratio: float = 0.5
 
     post_trim_thickness: float = 18.0
+    post_display_shelf_count: int = 3
+    post_display_offset_ratio: float = 0.5
     display_ledge_depth: float = 55.0
     display_ledge_thickness: float = 18.0
     display_lip_height: float = 16.0
@@ -150,6 +152,12 @@ class BuiltInBookshelfSpec(FurnitureSpec):
             raise ValueError("shelf_count must be an integer")
         if self.shelf_count < 2:
             raise ValueError("shelf_count must be at least 2")
+        if not isinstance(self.post_display_shelf_count, int):
+            raise ValueError("post_display_shelf_count must be an integer")
+        if self.post_display_shelf_count < 1:
+            raise ValueError("post_display_shelf_count must be at least 1")
+        if not 0.0 < self.post_display_offset_ratio < 1.0:
+            raise ValueError("post_display_offset_ratio must remain between 0 and 1")
         if self.shelf_depth <= self.opening_depth:
             raise ValueError(
                 "shelf_depth must project beyond opening_depth for the requested post "
@@ -230,6 +238,17 @@ class BuiltInBookshelfSpec(FurnitureSpec):
             raise ValueError("display_ledge_depth must exceed display_lip_thickness")
         if self.display_ledge_thickness >= self.shelf_pitch:
             raise ValueError("display ledge is too thick for the shelf spacing")
+        last_display_level = (
+            self.cabinet_top_height
+            + self.shelf_pitch
+            + self.shelf_thickness
+            + self.post_display_offset_ratio * self.shelf_pitch
+            + (self.post_display_shelf_count - 1) * self.shelf_pitch
+        )
+        if last_display_level + self.display_lip_height >= (
+            self.height_under_beam - self.crown_height
+        ):
+            raise ValueError("post display shelves collide with the crown below the top beam")
         minimum_core_screw_length = self.core_upright_thickness + self.installation_clearance + 25.0
         if self.core_shelf_screw_length < minimum_core_screw_length:
             raise ValueError(
