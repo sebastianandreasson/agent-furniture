@@ -11,11 +11,11 @@ an empty `parameters` object so edits to Python defaults appear immediately in t
   the far-right boundary is recorded in the specification, but the furniture stops at its near edge.
 - The recess is 145 mm deep, the underside of the top beam is 2400 mm above the floor, and the base
   cabinet counter is 700 mm high.
-- Base cabinets are 330 mm deep from the wall plane to their finished front edge. Open shelves and
-  structural core uprights remain 160 mm deep, intentionally projecting 15 mm beyond the recess.
+- Base cabinets are 400 mm deep from the wall plane to their finished front edge. Open shelves and
+  structural core uprights are 200 mm deep, intentionally projecting 55 mm beyond the recess.
 - The wall plane is CAD Y=0 and every furniture layer projects into the room along negative Y. This
   keeps the finished front facing the default browser perspective without mirroring the bay layout.
-- Six continuous oak core uprights sit at the two ends of each opening. They are 160 mm deep, run
+- Six continuous oak core uprights sit at the two ends of each opening. They are 200 mm deep, run
   from floor to the available top envelope, and fasten sideways into verified timber. The far-right
   upright is scribed under the ceiling slope.
 - Cabinets, face frames, counters, shelves, dividers, and crown pieces fit between these structural
@@ -28,8 +28,10 @@ an empty `parameters` object so edits to Python defaults appear immediately in t
 - The lower cabinet counter, recessed plinth, and finished front continue across both internal post
   zones. Each post zone receives a matching framed inset panel that is fixed shut, has no knob or
   hinges, and does not imply usable storage behind the existing timber.
-- Existing vertical posts receive matching oak cladding. At every shelf course, each internal post
-  receives a shallow ledge and lip for one front-facing book.
+- Existing vertical posts receive matching oak cladding above the cabinet counter. At every shelf
+  course, each internal post receives a shallow ledge and lip for one front-facing book. The fixed
+  framed cabinet panels provide the visual treatment below the counter without duplicating cladding
+  inside the cabinet run.
 - There are no back panels. The finish is dark stained oak, with oak-veneered plywood for carcass
   panels and aged-brass knobs.
 - Furniture restraint is limited to verified existing vertical timber and the top horizontal beam.
@@ -46,6 +48,24 @@ core uprights, 3 mm fitting clearance between those uprights and removable horiz
 shelf boards, and 300 mm shelf pitch. With those defaults, fitted widths become 1034, 1384, and 604
 mm. Preliminary shelf attachment uses 5 × 60 mm screws through the core uprights into piloted shelf
 ends. Measure the real posts at multiple heights before fabrication.
+
+The counter pieces spanning the internal posts are cut from full-depth blanks and notched around
+both the measured site post and the neighboring core uprights. The front half remains continuous,
+so the decorative cabinet run reads as one line without modeling impossible solid intersections.
+
+## Authoring map
+
+Small design changes should start in `spec.py`; shared placements and face/depth planes belong in
+`layout.py`. Physical construction is split by responsibility under `subassemblies/`: core uprights,
+base cabinets, upper bookcase, post displays, and crown. Their corresponding local-coordinate drill
+patterns live under `joinery_operations/`, while `parts.py` and `joinery.py` only assemble those
+modules in construction order. Keep new placement formulas in the derived layout when more than one
+subassembly or drill schedule needs them.
+
+The exact `find_interferences()` regression check rejects positive shared solid volume but permits
+intended face contacts. The bookshelf suite runs this audit for the default design and representative
+depth, post-width, cabinet-height, and shelf-pitch changes. This catches clipping regressions; it does
+not create manufacturing clearances or validate the existing structure.
 
 The right slope uses a screen-style offset convention from the supplied notes: it begins 150 mm into
 the right opening at a point 100 mm above the beam underside, then reaches 200 mm below the beam

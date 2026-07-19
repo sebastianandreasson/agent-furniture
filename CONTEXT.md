@@ -67,6 +67,13 @@ GLB, STL, SVG, and CSV files are referenced by this contract and are never hand-
 The web presentation derived from an artifact contract: material roll-up, part schematics, hardware,
 drill coordinates, connection sequence, and an interactive assembly preview.
 
+### Interference audit
+
+An exact placed-solid check on a design aggregate. It reports positive shared volume between part
+occurrences while allowing zero-volume construction contacts such as one panel resting on another.
+It is a regression gate for accidental clipping; it does not replace joinery, tolerance, clearance,
+or structural review.
+
 ## Invariants
 
 - Units are millimetres.

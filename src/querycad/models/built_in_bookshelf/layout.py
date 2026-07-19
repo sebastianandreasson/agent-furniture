@@ -52,6 +52,24 @@ class DividerLayout:
 
 
 @dataclass(frozen=True)
+class DepthLayout:
+    """Named Y datums for the wall, shelf, carcass, and finished front planes."""
+
+    wall_y: float
+    shelf_center_y: float
+    cabinet_center_y: float
+    cabinet_front_y: float
+    carcass_depth: float
+    carcass_center_y: float
+    face_frame_center_y: float
+    door_center_y: float
+    plinth_center_y: float
+    post_cladding_center_y: float
+    display_ledge_back_y: float
+    crown_center_y: float
+
+
+@dataclass(frozen=True)
 class BuiltInLayout:
     """Geometry-free coordinates shared by parts, joinery, and tests."""
 
@@ -61,12 +79,18 @@ class BuiltInLayout:
     shelf_bottoms: tuple[float, ...]
     divider_segments: tuple[DividerLayout, ...]
     doors: tuple[DoorLayout, ...]
-    carcass_depth: float
+    depths: DepthLayout
     carcass_bottom_z: float
     carcass_height: float
+    base_divider_bottom_z: float
+    base_divider_height: float
     face_frame_height: float
+    center_stile_bottom_z: float
+    center_stile_height: float
     door_bottom_z: float
     door_height: float
+    post_cladding_bottom_z: float
+    post_cladding_height: float
     crown_bottom_z: float
     right_crown_base_z: float
     right_slope_crossing_x: float
@@ -200,6 +224,7 @@ class BuiltInLayout:
         right_fitted_end_offset = right_bay.fitted_right_x - right_bay.left_x
         right_crown_base = spec.right_slope_height_at(right_fitted_end_offset) - spec.crown_height
 
+        carcass_depth = spec.lower_depth - spec.face_frame_thickness
         return cls(
             furniture_width=total_width,
             bays=tuple(bays),
@@ -207,12 +232,33 @@ class BuiltInLayout:
             shelf_bottoms=shelf_bottoms,
             divider_segments=tuple(divider_segments),
             doors=tuple(doors),
-            carcass_depth=spec.lower_depth - spec.face_frame_thickness,
+            depths=DepthLayout(
+                wall_y=0.0,
+                shelf_center_y=-spec.shelf_depth / 2,
+                cabinet_center_y=-spec.lower_depth / 2,
+                cabinet_front_y=-spec.lower_depth,
+                carcass_depth=carcass_depth,
+                carcass_center_y=-carcass_depth / 2,
+                face_frame_center_y=-spec.lower_depth + spec.face_frame_thickness / 2,
+                door_center_y=-spec.lower_depth + spec.door_thickness / 2,
+                plinth_center_y=(
+                    -spec.lower_depth + spec.plinth_recess + spec.base_panel_thickness / 2
+                ),
+                post_cladding_center_y=(-spec.opening_depth - spec.post_trim_thickness / 2),
+                display_ledge_back_y=-spec.opening_depth - spec.post_trim_thickness,
+                crown_center_y=-spec.shelf_depth + spec.crown_depth / 2,
+            ),
             carcass_bottom_z=spec.plinth_height,
             carcass_height=face_frame_height,
+            base_divider_bottom_z=spec.plinth_height + spec.base_panel_thickness,
+            base_divider_height=face_frame_height - spec.base_panel_thickness,
             face_frame_height=face_frame_height,
+            center_stile_bottom_z=spec.plinth_height + spec.face_frame_width,
+            center_stile_height=face_frame_height - 2 * spec.face_frame_width,
             door_bottom_z=door_bottom,
             door_height=door_height,
+            post_cladding_bottom_z=spec.cabinet_top_height,
+            post_cladding_height=spec.height_under_beam - spec.cabinet_top_height,
             crown_bottom_z=crown_bottom,
             right_crown_base_z=right_crown_base,
             right_slope_crossing_x=slope_crossing_x,
@@ -223,6 +269,12 @@ class BuiltInLayout:
 
     def doors_for_bay(self, name: str) -> tuple[DoorLayout, ...]:
         return tuple(door for door in self.doors if door.bay_name == name)
+
+    @property
+    def carcass_depth(self) -> float:
+        """Retain the established joinery-facing name for the derived carcass depth."""
+
+        return self.depths.carcass_depth
 
     def cabinet_bridge_width(self, post_name: str) -> float:
         """Return the full fitted-cabinet gap spanning an internal site post."""

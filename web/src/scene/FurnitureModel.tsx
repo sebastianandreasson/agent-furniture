@@ -4,6 +4,8 @@ import { Box3, MathUtils, Vector3, type Object3D } from 'three'
 import type { TransformControls as TransformControlsImpl } from 'three-stdlib'
 import { DEFAULT_PLACEMENT, useEditorStore } from '../state/editor'
 import type { CatalogDesign, Placement } from '../types'
+import { DarkWoodModel } from './DarkWoodModel'
+import { usesDarkWoodTexture } from './furnitureAppearance'
 
 function rounded(value: number, precision = 1) {
   const factor = 10 ** precision
@@ -18,6 +20,7 @@ export function FurnitureModel({ design }: { design: CatalogDesign }) {
   const mode = useEditorStore((state) => state.transformMode)
   const snapping = useEditorStore((state) => state.snapping)
   const showHelpers = useEditorStore((state) => state.showHelpers)
+  const showTextures = useEditorStore((state) => state.showTextures)
   const source = `${design.artifacts.glb}?revision=${design.revision}`
   const { scene } = useGLTF(source)
 
@@ -74,13 +77,17 @@ export function FurnitureModel({ design }: { design: CatalogDesign }) {
   const model = (
     <group name={`placement-${design.id}`}>
       <group scale={normalized.scale}>
-        <Clone
-          object={scene}
-          position={normalized.offset}
-          deep="materialsOnly"
-          castShadow
-          receiveShadow
-        />
+        {showTextures && usesDarkWoodTexture(design) ? (
+          <DarkWoodModel sourceScene={scene} position={normalized.offset} />
+        ) : (
+          <Clone
+            object={scene}
+            position={normalized.offset}
+            deep="materialsOnly"
+            castShadow
+            receiveShadow
+          />
+        )}
       </group>
       {showHelpers && (
         <mesh

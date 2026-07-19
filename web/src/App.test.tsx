@@ -203,6 +203,7 @@ describe('QueryCAD editor shell', () => {
       transformMode: 'translate',
       snapping: true,
       showHelpers: true,
+      showTextures: true,
     })
   })
 
@@ -251,6 +252,21 @@ describe('QueryCAD editor shell', () => {
 
     expect(useEditorStore.getState().showHelpers).toBe(false)
     expect(screen.getByRole('button', { name: '◇ Helpers off' })).toBeTruthy()
+  })
+
+  it('shows presentation textures by default and toggles them independently', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByTestId('mock-scene')
+
+    const toggle = screen.getByRole('button', { name: '▧ Textures on' })
+    expect(toggle.getAttribute('aria-pressed')).toBe('true')
+
+    await user.click(toggle)
+
+    expect(useEditorStore.getState().showTextures).toBe(false)
+    expect(screen.getByRole('button', { name: '▧ Textures off' })).toBeTruthy()
+    expect(useEditorStore.getState().showHelpers).toBe(true)
   })
 
   it('shows a generated material and assembly-parts breakdown', async () => {

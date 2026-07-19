@@ -1,13 +1,16 @@
 import { Bounds, Html, OrbitControls, useGLTF } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Suspense, useEffect, useMemo } from 'react'
+import { Color, Mesh, type Material, type Object3D } from 'three'
 import {
-  Color,
-  Mesh,
-  type Material,
-  type Object3D,
-  type Object3DEventMap,
-} from 'three'
+  useDarkWoodTextures,
+  useFurnitureSceneCopy,
+} from '../scene/darkWoodTextures'
+import {
+  usesDarkWoodTexture,
+  type WoodTextureSet,
+} from '../scene/furnitureAppearance'
+import { useEditorStore } from '../state/editor'
 import type { CatalogDesign, ManifestPart } from '../types'
 import type { PreviewContext } from './materialsViewModel'
 
@@ -30,17 +33,6 @@ function meshMaterials(mesh: Mesh) {
   return Array.isArray(mesh.material) ? mesh.material : [mesh.material]
 }
 
-function copySceneMaterials(scene: Object3D<Object3DEventMap>) {
-  const copy = scene.clone(true)
-  copy.traverse((object) => {
-    if (!(object instanceof Mesh)) return
-    object.material = Array.isArray(object.material)
-      ? object.material.map((material) => material.clone())
-      : object.material.clone()
-  })
-  return copy
-}
-
 function belongsToPart(
   object: Object3D,
   scene: Object3D,
@@ -54,16 +46,16 @@ function belongsToPart(
   return false
 }
 
-function AssemblyModel({
-  design,
+function PreparedAssemblyModel({
+  sourceScene,
+  textures,
   selectedParts,
 }: {
-  design: CatalogDesign
+  sourceScene: Object3D
+  textures?: WoodTextureSet
   selectedParts: ManifestPart[]
 }) {
-  const source = `${design.artifacts.glb}?revision=${design.revision}`
-  const { scene: sourceScene } = useGLTF(source)
-  const scene = useMemo(() => copySceneMaterials(sourceScene), [sourceScene])
+  const { scene } = useFurnitureSceneCopy(sourceScene, textures)
   const snapshots = useMemo(() => {
     const result = new Map<Material, MaterialSnapshot>()
     scene.traverse((object) => {
@@ -82,14 +74,6 @@ function AssemblyModel({
     })
     return result
   }, [scene])
-
-  useEffect(() => () => useGLTF.clear(source), [source])
-  useEffect(
-    () => () => {
-      for (const material of snapshots.keys()) material.dispose()
-    },
-    [snapshots],
-  )
 
   useEffect(() => {
     const names = new Set(selectedParts.flatMap((part) => part.placementNames))
@@ -136,6 +120,51 @@ function AssemblyModel({
     <Bounds fit clip observe margin={1.08}>
       <primitive object={scene} />
     </Bounds>
+  )
+}
+
+function DarkWoodAssemblyModel({
+  sourceScene,
+  selectedParts,
+}: {
+  sourceScene: Object3D
+  selectedParts: ManifestPart[]
+}) {
+  const textures = useDarkWoodTextures()
+  return (
+    <PreparedAssemblyModel
+      sourceScene={sourceScene}
+      textures={textures}
+      selectedParts={selectedParts}
+    />
+  )
+}
+
+function AssemblyModel({
+  design,
+  selectedParts,
+}: {
+  design: CatalogDesign
+  selectedParts: ManifestPart[]
+}) {
+  const source = `${design.artifacts.glb}?revision=${design.revision}`
+  const { scene: sourceScene } = useGLTF(source)
+  const showTextures = useEditorStore((state) => state.showTextures)
+  useEffect(() => () => useGLTF.clear(source), [source])
+
+  if (showTextures && usesDarkWoodTexture(design)) {
+    return (
+      <DarkWoodAssemblyModel
+        sourceScene={sourceScene}
+        selectedParts={selectedParts}
+      />
+    )
+  }
+  return (
+    <PreparedAssemblyModel
+      sourceScene={sourceScene}
+      selectedParts={selectedParts}
+    />
   )
 }
 

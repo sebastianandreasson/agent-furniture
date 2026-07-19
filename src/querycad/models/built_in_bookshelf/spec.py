@@ -23,8 +23,8 @@ class BuiltInBookshelfSpec(FurnitureSpec):
     right_boundary_post_width: float = 360.0
     height_under_beam: float = 2400.0
     cabinet_top_height: float = 700.0
-    lower_depth: float = 330.0
-    shelf_depth: float = 160.0
+    lower_depth: float = 400.0
+    shelf_depth: float = 200.0
     shelf_count: int = 4
     shelf_pitch: float = 300.0
     shelf_thickness: float = 24.0

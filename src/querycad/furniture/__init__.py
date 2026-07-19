@@ -9,6 +9,7 @@ from querycad.furniture.geometry import (
     stock_box,
     top_countersunk_holes,
 )
+from querycad.furniture.interference import Interference, find_interferences
 from querycad.furniture.joinery import (
     AxisName,
     DrillOperation,
@@ -32,6 +33,7 @@ __all__ = [
     "ExternalTargetSpec",
     "FastenerSpec",
     "FurnitureSpec",
+    "Interference",
     "JoineryPlan",
     "JoinerySchedule",
     "JointSpec",
@@ -41,6 +43,7 @@ __all__ = [
     "Placement",
     "Vector3",
     "centered_box",
+    "find_interferences",
     "linear_centers",
     "rail_end_pocket_holes",
     "rounded_ring",

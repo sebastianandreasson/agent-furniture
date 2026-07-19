@@ -7,6 +7,7 @@ import pytest
 
 from querycad.config import load_design
 from querycad.export import export_design
+from querycad.furniture import find_interferences
 from querycad.models.built_in_bookshelf import (
     BuiltInBookshelfSpec,
     BuiltInLayout,
@@ -24,7 +25,7 @@ def test_default_spec_preserves_measured_site_envelope() -> None:
     assert spec.opening_depth == 145.0
     assert spec.height_under_beam == 2400.0
     assert spec.cabinet_top_height == 700.0
-    assert (spec.lower_depth, spec.shelf_depth) == (330.0, 160.0)
+    assert (spec.lower_depth, spec.shelf_depth) == (400.0, 200.0)
     assert spec.core_upright_thickness == 30.0
     assert spec.clear_opening_widths == (1040.0, 1390.0, 610.0)
     assert spec.shelf_count == 4
@@ -49,11 +50,13 @@ def test_default_geometry_and_bom_quantities() -> None:
             spec.height_under_beam,
         )
     )
-    assert len(design.parts) == 44
+    assert len(design.parts) == 46
     assert design.total_occurrences() == 96
     quantities = {part.number: part.quantity for part in design.parts}
-    assert quantities["BASE-CARCASS-VERTICAL-001"] == 8
-    assert quantities["FACE-FRAME-STILE-001"] == 8
+    assert quantities["BASE-CARCASS-VERTICAL-001"] == 6
+    assert quantities["BASE-CARCASS-DIVIDER-001"] == 2
+    assert quantities["FACE-FRAME-STILE-001"] == 6
+    assert quantities["FACE-FRAME-CENTER-STILE-001"] == 2
     assert quantities["DOOR-KNOB-001"] == 5
     assert quantities["UPPER-SHELF-LEFT-001"] == spec.shelf_count
     assert quantities["UPPER-SHELF-MIDDLE-001"] == spec.shelf_count
@@ -114,19 +117,19 @@ def test_full_height_core_uprights_replace_short_shelf_cleats() -> None:
     parts = {part.number: part for part in design.parts}
 
     assert parts["BOOKCASE-CORE-UPRIGHT-LH-001"].stock_size_mm == pytest.approx(
-        (30.0, 160.0, 2400.0)
+        (30.0, 200.0, 2400.0)
     )
     assert parts["BOOKCASE-CORE-UPRIGHT-RH-001"].stock_size_mm == pytest.approx(
-        (30.0, 160.0, 2400.0)
+        (30.0, 200.0, 2400.0)
     )
     assert parts["BOOKCASE-CORE-UPRIGHT-RIGHT-SCRIBED-001"].stock_size_mm == pytest.approx(
-        (30.0, 160.0, 2217.307692)
+        (30.0, 200.0, 2217.307692)
     )
     assert parts["UPPER-SHELF-LEFT-001"].stock_size_mm[0] == pytest.approx(1034.0)
     assert parts["UPPER-SHELF-MIDDLE-001"].stock_size_mm[0] == pytest.approx(1384.0)
     assert parts["UPPER-SHELF-RIGHT-001"].stock_size_mm[0] == pytest.approx(604.0)
-    assert parts["COUNTER-LEFT-001"].stock_size_mm[1] == pytest.approx(330.0)
-    assert parts["UPPER-SHELF-LEFT-001"].stock_size_mm[1] == pytest.approx(160.0)
+    assert parts["COUNTER-LEFT-001"].stock_size_mm[1] == pytest.approx(400.0)
+    assert parts["UPPER-SHELF-LEFT-001"].stock_size_mm[1] == pytest.approx(200.0)
 
 
 def test_lower_cabinet_run_bridges_both_internal_posts() -> None:
@@ -139,10 +142,10 @@ def test_lower_cabinet_run_bridges_both_internal_posts() -> None:
         (426.0, 206.0)
     )
     assert parts["POST-CABINET-COUNTER-BRIDGE-LEFT-001"].stock_size_mm == pytest.approx(
-        (426.0, 330.0, 28.0)
+        (426.0, 400.0, 28.0)
     )
     assert parts["POST-CABINET-COUNTER-BRIDGE-MIDDLE-001"].stock_size_mm == pytest.approx(
-        (206.0, 330.0, 28.0)
+        (206.0, 400.0, 28.0)
     )
     assert parts["POST-CABINET-FIXED-PANEL-LEFT-001"].stock_size_mm == pytest.approx(
         (426.0, 22.0, layout.face_frame_height)
@@ -165,6 +168,76 @@ def test_lower_cabinet_run_bridges_both_internal_posts() -> None:
     assert len(fixed_panel_operations) == 2
     assert all(len(operation.points) == 4 for operation in fixed_panel_operations)
     assert all(operation.fastener_code == "CAB-5X50-T20" for operation in fixed_panel_operations)
+
+
+def test_base_dividers_and_center_stiles_fit_between_adjacent_members() -> None:
+    spec = BuiltInBookshelfSpec()
+    layout = BuiltInLayout.from_spec(spec)
+    design = build_built_in_bookshelf("test-bookshelf", spec.as_dict())
+    parts = {part.number: part for part in design.parts}
+
+    divider = parts["BASE-CARCASS-DIVIDER-001"]
+    center_stile = parts["FACE-FRAME-CENTER-STILE-001"]
+    assert divider.stock_size_mm == pytest.approx(
+        (spec.base_panel_thickness, layout.carcass_depth, layout.base_divider_height)
+    )
+    assert {placement.translation_mm[2] for placement in divider.placements} == {
+        layout.base_divider_bottom_z
+    }
+    assert layout.base_divider_bottom_z == pytest.approx(
+        layout.carcass_bottom_z + spec.base_panel_thickness
+    )
+    assert center_stile.stock_size_mm[2] == pytest.approx(layout.center_stile_height)
+    assert {placement.translation_mm[2] for placement in center_stile.placements} == {
+        layout.center_stile_bottom_z
+    }
+    assert layout.center_stile_bottom_z == pytest.approx(spec.plinth_height + spec.face_frame_width)
+    assert layout.center_stile_bottom_z + layout.center_stile_height == pytest.approx(
+        spec.plinth_height + layout.face_frame_height - spec.face_frame_width
+    )
+
+
+def test_post_cladding_only_covers_the_upper_bookcase_zone() -> None:
+    spec = BuiltInBookshelfSpec()
+    layout = BuiltInLayout.from_spec(spec)
+    design = build_built_in_bookshelf("test-bookshelf", spec.as_dict())
+
+    claddings = [
+        part for part in design.parts if part.number.startswith("STRUCTURAL-POST-CLADDING-")
+    ]
+    assert len(claddings) == 2
+    assert all(
+        part.stock_size_mm[2] == pytest.approx(layout.post_cladding_height) for part in claddings
+    )
+    assert all(
+        part.placements[0].translation_mm[2] == pytest.approx(layout.post_cladding_bottom_z)
+        for part in claddings
+    )
+
+
+def test_default_design_has_no_positive_volume_interferences() -> None:
+    design = build_built_in_bookshelf("test-bookshelf", BuiltInBookshelfSpec().as_dict())
+
+    assert find_interferences(design) == ()
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    (
+        {"lower_depth": 430.0, "shelf_depth": 210.0},
+        {"left_post_width": 380.0, "middle_post_width": 160.0},
+        {"cabinet_top_height": 740.0, "shelf_pitch": 285.0},
+    ),
+)
+def test_common_dimension_tweaks_remain_interference_free(overrides: dict[str, float]) -> None:
+    values = BuiltInBookshelfSpec().as_dict()
+    values.update(overrides)
+    spec = BuiltInBookshelfSpec.from_mapping(values)
+
+    design = build_built_in_bookshelf("tweaked-bookshelf", spec.as_dict())
+
+    design.validate()
+    assert find_interferences(design) == ()
 
 
 def test_masonry_dividers_stagger_and_support_both_wide_bays() -> None:

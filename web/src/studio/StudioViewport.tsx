@@ -18,6 +18,8 @@ export function StudioViewport({
   const setSnapping = useEditorStore((state) => state.setSnapping)
   const showHelpers = useEditorStore((state) => state.showHelpers)
   const setShowHelpers = useEditorStore((state) => state.setShowHelpers)
+  const showTextures = useEditorStore((state) => state.showTextures)
+  const setShowTextures = useEditorStore((state) => state.setShowTextures)
   const cameraView = useEditorStore((state) => state.cameraView)
   const setCameraView = useEditorStore((state) => state.setCameraView)
 
@@ -70,6 +72,15 @@ export function StudioViewport({
           onClick={() => setShowHelpers(!showHelpers)}
         >
           ◇ Helpers {showHelpers ? 'on' : 'off'}
+        </button>
+        <button
+          className={`toolbar-button ${showTextures ? 'is-active' : ''}`}
+          type="button"
+          aria-pressed={showTextures}
+          title="Show or hide presentation texture maps while preserving the base CAD material colors"
+          onClick={() => setShowTextures(!showTextures)}
+        >
+          ▧ Textures {showTextures ? 'on' : 'off'}
         </button>
         <div className="toolbar-spacer" />
         <div className="view-switcher">
