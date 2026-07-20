@@ -4,7 +4,7 @@
   inset: 0;
   overflow: auto;
   padding: 24px;
-  background: #05080de8;
+  background: #d8d5cce8;
   backdrop-filter: blur(16px);
 }
 
@@ -13,11 +13,11 @@
   min-height: calc(100svh - 48px);
   margin: 0 auto;
   overflow: hidden;
-  border: 1px solid #3a4650;
+  border: 1px solid #aaa9a1;
   border-radius: 18px;
-  background: #0d141a;
-  color: #dfe6ea;
-  box-shadow: 0 30px 100px #000c;
+  background: #f4f1e9;
+  color: var(--ink);
+  box-shadow: 0 30px 90px #4842354a;
 }
 
 .part-detail-header {
@@ -29,26 +29,26 @@
   justify-content: space-between;
   gap: 32px;
   padding: 24px 28px;
-  border-bottom: 1px solid #34414b;
-  background: #111920f2;
+  border-bottom: 1px solid var(--line);
+  background: #fbfaf5ed;
   backdrop-filter: blur(18px);
 }
 
 .part-detail-header .eyebrow {
   margin: 0 0 8px;
-  color: #8998a2;
+  color: var(--muted);
   font-size: 11px;
 }
 
 .part-detail-header > div > span {
-  color: #ff9f68;
+  color: var(--accent-ink);
   font: 750 12px/1 var(--mono);
   letter-spacing: 0.06em;
 }
 
 .part-detail-header h2 {
   margin: 7px 0 8px;
-  color: #f1f5f7;
+  color: var(--ink-strong);
   font-size: clamp(25px, 3vw, 38px);
   line-height: 1.05;
   letter-spacing: -0.035em;
@@ -56,7 +56,7 @@
 
 .part-detail-header > div > p:last-child {
   margin: 0;
-  color: #91a0a9;
+  color: var(--muted);
   font: 600 13px/1.5 var(--mono);
 }
 
@@ -65,20 +65,20 @@
   align-items: center;
   gap: 14px;
   padding: 10px 11px 10px 15px;
-  border: 1px solid #4a5862;
+  border: 1px solid #bbb8ae;
   border-radius: 999px;
-  background: #1a242b;
-  color: #dce4e8;
+  background: var(--surface-raised);
+  color: var(--ink);
   font: 700 12px/1 var(--sans);
   cursor: pointer;
 }
 
 .part-detail-header button:hover,
 .part-detail-header button:focus-visible {
-  border-color: #ff9f68;
+  border-color: var(--accent);
   outline: 0;
-  color: #fff;
-  background: #2a211e;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
 }
 
 .part-detail-header button b {
@@ -87,8 +87,8 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: #ff9f68;
-  color: #251710;
+  background: #ef824b;
+  color: #2a170e;
   font-size: 19px;
 }
 
@@ -220,19 +220,19 @@
 }
 
 .part-detail-point-callout rect {
-  fill: #172126f2;
-  stroke: #f2915f;
+  fill: #fffdf8f5;
+  stroke: #d75f2b;
   stroke-width: 1.5px;
-  filter: drop-shadow(0 5px 8px #17212642);
+  filter: drop-shadow(0 5px 8px #4b45362e);
 }
 
 .part-detail-point-callout text {
-  fill: #f4f1e8;
+  fill: #283033;
   font: 700 12px/1 var(--mono);
 }
 
 .part-detail-point-callout .part-detail-point-callout-title {
-  fill: #ffab7d;
+  fill: #a43c16;
   font-size: 11px;
   font-weight: 850;
   letter-spacing: 0.04em;
@@ -434,9 +434,9 @@
 .part-detail-footer {
   margin: 0 24px 24px;
   padding: 15px 18px;
-  border: 1px solid #704637;
+  border: 1px solid #d3a087;
   border-radius: 10px;
-  background: #2a1c18;
-  color: #d8b8a9;
+  background: #fff2e6;
+  color: #684e42;
   font: 600 12px/1.55 var(--mono);
 }

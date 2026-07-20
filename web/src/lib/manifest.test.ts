@@ -159,15 +159,7 @@ describe('parseManifest', () => {
   })
 
   it('maps and cross-checks a generated joinery schedule', () => {
-    const manifest = parseManifest({
-      schema_version: 1,
-      name: 'entryway-bench',
-      model: 'entryway_bench',
-      units: 'mm',
-      part_occurrences: 4,
-      parts: [PART],
-      joinery: JOINERY,
-    })
+    const manifest = parseManifest(manifestJson({ joinery: JOINERY }))
 
     expect(manifest.joinery.fasteners[0]).toMatchObject({
       code: 'PH-38-FINE',
@@ -181,30 +173,26 @@ describe('parseManifest', () => {
   })
 
   it('allows declared site targets without adding fake BOM parts', () => {
-    const manifest = parseManifest({
-      schema_version: 1,
-      name: 'entryway-bench',
-      model: 'entryway_bench',
-      units: 'mm',
-      part_occurrences: 4,
-      parts: [PART],
-      joinery: {
-        ...JOINERY,
-        external_targets: [
-          {
-            code: 'SITE-POST',
-            description: 'Verified existing timber post',
-            notes: 'Do not anchor into brick.',
-          },
-        ],
-        joints: [
-          {
-            ...JOINERY.joints[0],
-            target_part_number: 'SITE-POST',
-          },
-        ],
-      },
-    })
+    const manifest = parseManifest(
+      manifestJson({
+        joinery: {
+          ...JOINERY,
+          external_targets: [
+            {
+              code: 'SITE-POST',
+              description: 'Verified existing timber post',
+              notes: 'Do not anchor into brick.',
+            },
+          ],
+          joints: [
+            {
+              ...JOINERY.joints[0],
+              target_part_number: 'SITE-POST',
+            },
+          ],
+        },
+      }),
+    )
 
     expect(manifest.joinery.externalTargets).toEqual([
       {
@@ -220,17 +208,9 @@ describe('parseManifest', () => {
     const joinery = structuredClone(JOINERY)
     joinery.fasteners[0].quantity = 3
 
-    expect(() =>
-      parseManifest({
-        schema_version: 1,
-        name: 'entryway-bench',
-        model: 'entryway_bench',
-        units: 'mm',
-        part_occurrences: 4,
-        parts: [PART],
-        joinery,
-      }),
-    ).toThrow('hardware totals do not match')
+    expect(() => parseManifest(manifestJson({ joinery }))).toThrow(
+      'hardware totals do not match',
+    )
   })
 
   it.each([

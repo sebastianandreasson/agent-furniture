@@ -426,86 +426,26 @@ def test_no_extension_example_is_a_third_variant_of_the_bench_family() -> None:
     )
 
 
-def test_rejects_unknown_parameter() -> None:
-    with pytest.raises(ValueError, match="unknown entryway_bench parameter"):
-        EntrywayBenchSpec.from_mapping({"unsupported": 42})
-
-
-def test_rejects_overlapping_slats() -> None:
-    values = EntrywayBenchSpec().as_dict()
-    values["shelf_slat_count"] = 40
-
-    with pytest.raises(ValueError, match="shelf slats overlap"):
-        EntrywayBenchSpec.from_mapping(values)
-
-
-def test_rejects_shelf_colliding_with_top_rail() -> None:
-    values = EntrywayBenchSpec().as_dict()
-    values["lower_shelf_height"] = 450.0
-
-    with pytest.raises(ValueError, match="lower shelf collides"):
-        EntrywayBenchSpec.from_mapping(values)
-
-
-def test_rejects_non_integer_slat_count() -> None:
-    values = EntrywayBenchSpec().as_dict()
-    values["shelf_slat_count"] = 7.5
-
-    with pytest.raises(ValueError, match="shelf_slat_count must be an integer"):
-        EntrywayBenchSpec.from_mapping(values)
-
-
-def test_rejects_extension_without_an_indent() -> None:
-    values = EntrywayBenchSpec().as_dict()
-    values["extension_depth"] = values["depth"]
-
-    with pytest.raises(ValueError, match="extension_depth must be smaller"):
-        EntrywayBenchSpec.from_mapping(values)
-
-
-def test_rejects_unknown_extension_side() -> None:
-    values = EntrywayBenchSpec().as_dict()
-    values["extension_side"] = "middle"
-
-    with pytest.raises(ValueError, match="extension_side must be"):
-        EntrywayBenchSpec.from_mapping(values)
-
-
-def test_rejects_unknown_extension_mode() -> None:
-    values = EntrywayBenchSpec().as_dict()
-    values["extension_mode"] = "laundry"
-
-    with pytest.raises(ValueError, match="extension_mode must be"):
-        EntrywayBenchSpec.from_mapping(values)
-
-
-def test_rejects_umbrella_compartment_that_consumes_all_storage() -> None:
-    values = EntrywayBenchSpec(extension_mode="umbrella_storage").as_dict()
-    values["umbrella_compartment_width"] = values["extension_length"]
-
-    with pytest.raises(ValueError, match="leaves no general storage area"):
-        EntrywayBenchSpec.from_mapping(values)
-
-
-def test_rejects_extension_shelf_too_short_for_its_supports() -> None:
-    values = EntrywayBenchSpec().as_dict()
-    values["extension_shelf_length"] = 100.0
-
-    with pytest.raises(ValueError, match="too short to reach both support rails"):
-        EntrywayBenchSpec.from_mapping(values)
-
-
-def test_rejects_excessive_extension_shelf_angle() -> None:
-    values = EntrywayBenchSpec().as_dict()
-    values["extension_shelf_angle_deg"] = 60.0
-
-    with pytest.raises(ValueError, match="must be smaller than 60 degrees"):
-        EntrywayBenchSpec.from_mapping(values)
-
-
-def test_rejects_stopper_thicker_than_extension_shelf() -> None:
-    values = EntrywayBenchSpec().as_dict()
-    values["extension_shelf_stopper_thickness"] = values["extension_shelf_length"]
-
-    with pytest.raises(ValueError, match="stopper_thickness must be smaller"):
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    (
+        ({"unsupported": 42}, "unknown entryway_bench parameter"),
+        ({"shelf_slat_count": 40}, "shelf slats overlap"),
+        ({"lower_shelf_height": 450.0}, "lower shelf collides"),
+        ({"shelf_slat_count": 7.5}, "shelf_slat_count must be an integer"),
+        ({"extension_depth": 250.0}, "extension_depth must be smaller"),
+        ({"extension_side": "middle"}, "extension_side must be"),
+        ({"extension_mode": "laundry"}, "extension_mode must be"),
+        (
+            {"extension_mode": "umbrella_storage", "umbrella_compartment_width": 600.0},
+            "leaves no general storage area",
+        ),
+        ({"extension_shelf_length": 100.0}, "too short to reach both support rails"),
+        ({"extension_shelf_angle_deg": 60.0}, "must be smaller than 60 degrees"),
+        ({"extension_shelf_stopper_thickness": 260.0}, "stopper_thickness must be smaller"),
+    ),
+)
+def test_rejects_invalid_spec(overrides: dict[str, object], message: str) -> None:
+    values = EntrywayBenchSpec().as_dict() | overrides
+    with pytest.raises(ValueError, match=message):
         EntrywayBenchSpec.from_mapping(values)

@@ -12,7 +12,7 @@
 
 .mw-hero h2 {
   margin: 6px 0 10px;
-  color: #f2f5f7;
+  color: var(--ink-strong);
   font-size: clamp(30px, 3vw, 38px);
   line-height: 1;
   letter-spacing: -0.04em;
@@ -23,23 +23,23 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  color: #93a0aa;
+  color: var(--muted);
   font: 650 13px/1 var(--mono);
 }
 
 .mw-summary-chips > span {
   padding: 7px 10px;
-  border: 1px solid #2e3942;
+  border: 1px solid #c9c6bc;
   border-radius: 999px;
-  background: #12191f;
+  background: #f7f5ee;
 }
 
 .mw-summary-chips b {
-  color: #e8edf1;
+  color: #303739;
 }
 
 .mw-summary-chips .is-accent b {
-  color: #ffc19b;
+  color: var(--accent-ink);
 }
 
 .mw-hero-tools {
@@ -63,16 +63,16 @@
   align-items: center;
   gap: 10px;
   padding: 9px 11px;
-  border: 1px solid #2e3942;
+  border: 1px solid #c9c6bc;
   border-radius: 9px;
-  background: #12191f;
+  background: #f7f5ee;
 }
 
 .mw-material-rollup i {
   width: 24px;
   height: 24px;
   flex: 0 0 auto;
-  border: 1px solid #ffffff25;
+  border: 1px solid #7a756a3d;
   border-radius: 6px;
 }
 
@@ -84,7 +84,7 @@
 .mw-material-rollup strong {
   max-width: 190px;
   overflow: hidden;
-  color: #dce4e9;
+  color: #303739;
   font-size: 12px;
   font-weight: 650;
   text-overflow: ellipsis;
@@ -93,7 +93,7 @@
 
 .mw-material-rollup small {
   margin-top: 3px;
-  color: #7d8b95;
+  color: var(--muted);
   font-size: 11px;
 }
 
@@ -138,7 +138,7 @@
   display: flex;
   gap: 6px;
   padding: 10px 0 12px;
-  background: linear-gradient(#0c1116 78%, transparent);
+  background: linear-gradient(var(--canvas) 78%, transparent);
 }
 
 .mw-tabs button {
@@ -148,39 +148,40 @@
   justify-content: center;
   gap: 8px;
   padding: 12px;
-  border: 1px solid #303b44;
+  border: 1px solid #c5c2b8;
   border-radius: 9px;
-  background: #141b21;
-  color: #8e9ba5;
+  background: #f5f2ea;
+  color: #646c6e;
   font: 650 13px/1 var(--sans);
   cursor: pointer;
 }
 
 .mw-tabs button:hover,
 .mw-tabs button:focus-visible {
-  border-color: #7b513b;
+  border-color: #d0835c;
   outline: 0;
-  color: #e7edf0;
+  background: #fffaf3;
+  color: var(--accent-ink);
 }
 
 .mw-tabs button.is-active {
-  border-color: #7b4a32;
-  background: #3c2b22;
-  color: #ffc19b;
-  box-shadow: inset 0 0 0 1px #ff9f6826;
+  border-color: #d0835c;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  box-shadow: inset 0 0 0 1px #d75f2b21;
 }
 
 .mw-tabs button span {
   padding: 4px 7px;
   border-radius: 999px;
-  background: #00000038;
+  background: #4c443414;
   font: 750 10px/1 var(--mono);
   white-space: nowrap;
 }
 
 .mw-paper-panel {
   padding: 24px;
-  border: 1px solid #2e3942;
+  border: 1px solid #b9b6ac;
   border-radius: 13px;
   background:
     linear-gradient(#dedcd426 1px, transparent 1px),
@@ -188,8 +189,8 @@
   background-size: 48px 48px;
   color: #1e2529;
   box-shadow:
-    0 22px 60px #00000045,
-    inset 0 0 0 1px #ffffffa8;
+    0 18px 44px #4b45361c,
+    inset 0 0 0 1px #ffffffc9;
 }
 
 .mw-paper-panel .eyebrow {

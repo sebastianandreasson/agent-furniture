@@ -2,10 +2,10 @@
   position: sticky;
   top: 18px;
   overflow: hidden;
-  border: 1px solid #303b44;
+  border: 1px solid #bcb9af;
   border-radius: 14px;
-  background: #10171d;
-  box-shadow: 0 22px 60px #0000004a;
+  background: var(--surface);
+  box-shadow: 0 20px 46px #4b45361f;
 }
 
 .assembly-preview-heading {
@@ -15,13 +15,13 @@
   justify-content: space-between;
   gap: 18px;
   padding: 0 18px;
-  border-bottom: 1px solid #2b353e;
-  background: linear-gradient(110deg, #151d23, #10161b);
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(110deg, #fffdf8, #f1eee6);
 }
 
 .assembly-preview-heading h3 {
   margin: 5px 0 0;
-  color: #e9eef1;
+  color: var(--ink-strong);
   font-size: 20px;
   letter-spacing: -0.025em;
 }
@@ -30,7 +30,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #83929c;
+  color: var(--muted);
   font: 650 11px/1 var(--mono);
   text-transform: uppercase;
 }
@@ -40,8 +40,8 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #69d49a;
-  box-shadow: 0 0 10px #69d49a9c;
+  background: #4d9a6d;
+  box-shadow: 0 0 0 3px #4d9a6d20;
 }
 
 .assembly-preview-canvas {
@@ -92,15 +92,16 @@
   flex-direction: column;
   gap: 4px;
   padding: 11px 13px;
-  border: 1px solid #3a4752;
+  border: 1px solid #bcb9af;
   border-radius: 9px;
-  background: #0d141ad9;
+  background: #fffdf8e8;
+  box-shadow: 0 8px 24px #4b453625;
   backdrop-filter: blur(12px);
   pointer-events: none;
 }
 
 .assembly-preview-hint span {
-  color: #ff9f68;
+  color: var(--accent-ink);
   font: 700 11px/1 var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -108,23 +109,23 @@
 
 .assembly-preview-hint strong {
   overflow: hidden;
-  color: #e7edf0;
+  color: var(--ink-strong);
   font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .assembly-preview-hint small {
-  color: #7e8c96;
+  color: var(--muted);
   font-size: 11px;
 }
 
 .assembly-preview-footer {
   margin: 0;
   padding: 11px 16px;
-  border-top: 1px solid #2b353e;
-  color: #74828c;
-  background: #0d1419;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  background: #f3f0e8;
   font-size: 11px;
   line-height: 1.45;
   text-align: center;

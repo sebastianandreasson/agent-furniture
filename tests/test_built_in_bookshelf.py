@@ -383,58 +383,20 @@ def test_example_design_resolves_from_python_defaults() -> None:
     assert design.parameters == BuiltInBookshelfSpec().as_dict()
 
 
-def test_rejects_shelves_that_do_not_project_past_the_recess() -> None:
-    values = BuiltInBookshelfSpec().as_dict()
-    values["shelf_depth"] = values["opening_depth"]
-
-    with pytest.raises(ValueError, match="shelf_depth must project beyond"):
-        BuiltInBookshelfSpec.from_mapping(values)
-
-
-def test_rejects_slope_that_clips_the_highest_shelf() -> None:
-    values = BuiltInBookshelfSpec().as_dict()
-    values["right_slope_end_below_beam"] = 700.0
-
-    with pytest.raises(ValueError, match="right slope leaves too little clearance"):
-        BuiltInBookshelfSpec.from_mapping(values)
-
-
-def test_rejects_non_integer_shelf_count() -> None:
-    values = BuiltInBookshelfSpec().as_dict()
-    values["shelf_count"] = 3.5
-
-    with pytest.raises(ValueError, match="shelf_count must be an integer"):
-        BuiltInBookshelfSpec.from_mapping(values)
-
-
-def test_rejects_invalid_post_display_layout() -> None:
-    values = BuiltInBookshelfSpec().as_dict()
-    values["post_display_shelf_count"] = 3.5
-    with pytest.raises(ValueError, match="post_display_shelf_count must be an integer"):
-        BuiltInBookshelfSpec.from_mapping(values)
-
-    values = BuiltInBookshelfSpec().as_dict()
-    values["post_display_offset_ratio"] = 1.0
-    with pytest.raises(ValueError, match="post_display_offset_ratio must remain between"):
-        BuiltInBookshelfSpec.from_mapping(values)
-
-    values = BuiltInBookshelfSpec().as_dict()
-    values["post_display_shelf_count"] = 5
-    with pytest.raises(ValueError, match="post display shelves collide with the crown"):
-        BuiltInBookshelfSpec.from_mapping(values)
-
-
-def test_rejects_opening_too_narrow_for_framed_doors() -> None:
-    values = BuiltInBookshelfSpec().as_dict()
-    values["right_opening_width"] = 150.0
-
-    with pytest.raises(ValueError, match="right opening is too narrow"):
-        BuiltInBookshelfSpec.from_mapping(values)
-
-
-def test_rejects_core_uprights_that_consume_the_door_opening() -> None:
-    values = BuiltInBookshelfSpec().as_dict()
-    values["core_upright_thickness"] = 250.0
-
-    with pytest.raises(ValueError, match="right opening is too narrow"):
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    (
+        ({"shelf_depth": 145.0}, "shelf_depth must project beyond"),
+        ({"right_slope_end_below_beam": 700.0}, "right slope leaves too little clearance"),
+        ({"shelf_count": 3.5}, "shelf_count must be an integer"),
+        ({"post_display_shelf_count": 3.5}, "post_display_shelf_count must be an integer"),
+        ({"post_display_offset_ratio": 1.0}, "post_display_offset_ratio must remain between"),
+        ({"post_display_shelf_count": 5}, "post display shelves collide with the crown"),
+        ({"right_opening_width": 150.0}, "right opening is too narrow"),
+        ({"core_upright_thickness": 250.0}, "right opening is too narrow"),
+    ),
+)
+def test_rejects_invalid_spec(overrides: dict[str, object], message: str) -> None:
+    values = BuiltInBookshelfSpec().as_dict() | overrides
+    with pytest.raises(ValueError, match=message):
         BuiltInBookshelfSpec.from_mapping(values)

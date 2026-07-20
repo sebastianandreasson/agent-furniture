@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
@@ -21,11 +21,7 @@ class ExternalTargetSpec:
     notes: str = ""
 
     def as_dict(self) -> dict[str, str]:
-        return {
-            "code": self.code,
-            "description": self.description,
-            "notes": self.notes,
-        }
+        return asdict(self)
 
 
 @dataclass(frozen=True)
@@ -48,22 +44,12 @@ class FastenerSpec:
     notes: str = ""
 
     def as_dict(self, quantity: int) -> dict[str, Any]:
+        values = asdict(self)
         return {
-            "code": self.code,
-            "description": self.description,
+            "code": values.pop("code"),
+            "description": values.pop("description"),
             "quantity": quantity,
-            "length_mm": self.length_mm,
-            "nominal_size": self.nominal_size,
-            "head": self.head,
-            "drive": self.drive,
-            "thread": self.thread,
-            "finish": self.finish,
-            "application": self.application,
-            "manufacturer": self.manufacturer,
-            "product_code": self.product_code,
-            "source_url": self.source_url,
-            "status": self.status,
-            "notes": self.notes,
+            **values,
         }
 
 
@@ -76,11 +62,7 @@ class DrillPoint:
     label: str = ""
 
     def as_dict(self) -> dict[str, Any]:
-        return {
-            "position_mm": list(self.position_mm),
-            "axis": list(self.axis),
-            "label": self.label,
-        }
+        return asdict(self)
 
 
 @dataclass(frozen=True)
@@ -141,17 +123,7 @@ class JointSpec:
     notes: str = ""
 
     def as_dict(self) -> dict[str, Any]:
-        return {
-            "joint_id": self.joint_id,
-            "description": self.description,
-            "source_part_number": self.source_part_number,
-            "target_part_number": self.target_part_number,
-            "fastener_code": self.fastener_code,
-            "quantity": self.quantity,
-            "drill_operation_ids": list(self.drill_operation_ids),
-            "assembly_step": self.assembly_step,
-            "notes": self.notes,
-        }
+        return asdict(self)
 
 
 @dataclass(frozen=True)
