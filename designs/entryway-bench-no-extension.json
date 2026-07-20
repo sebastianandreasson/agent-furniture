@@ -1,0 +1,10 @@
+{
+  "name": "entryway-bench-no-extension",
+  "family": "entryway-bench",
+  "variant": "no-extension",
+  "variant_label": "No extension",
+  "model": "entryway_bench",
+  "parameters": {
+    "extension_mode": "none"
+  }
+}

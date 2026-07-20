@@ -1,4 +1,10 @@
 import type { CatalogDesign } from '../types'
+import { VariantSelect } from '../VariantSelect'
+import {
+  formatFurnitureName,
+  groupDesignFamilies,
+  selectFamilyDesign,
+} from '../variants'
 import { formatVolume, rgbaCss } from './inventory'
 import type { MaterialsViewModel } from './materialsViewModel'
 
@@ -13,6 +19,8 @@ export function MaterialsHero({
   model: MaterialsViewModel
   onSelectDesign: (id: string) => void
 }) {
+  const families = groupDesignFamilies(designs)
+
   return (
     <section className="mw-hero">
       <div className="mw-hero-copy">
@@ -60,19 +68,36 @@ export function MaterialsHero({
             </article>
           ))}
         </div>
-        <label className="build-select mw-build-select">
-          <span>Furniture build</span>
-          <select
-            value={design.id}
-            onChange={(event) => onSelectDesign(event.target.value)}
-          >
-            {designs.map((candidate) => (
-              <option key={candidate.id} value={candidate.id}>
-                {candidate.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="mw-design-picker">
+          <label className="build-select mw-build-select">
+            <span>Furniture</span>
+            <select
+              value={design.familyId}
+              onChange={(event) => {
+                const family = families.find(
+                  (candidate) => candidate.id === event.target.value,
+                )
+                if (family) {
+                  onSelectDesign(
+                    selectFamilyDesign(family, design.variantId).id,
+                  )
+                }
+              }}
+            >
+              {families.map((family) => (
+                <option key={family.id} value={family.id}>
+                  {formatFurnitureName(family.id)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <VariantSelect
+            designs={designs}
+            activeDesign={design}
+            onSelectDesign={onSelectDesign}
+            className="materials-variant-select"
+          />
+        </div>
       </div>
     </section>
   )

@@ -700,6 +700,13 @@ kbd {
   background: #f9e5da;
 }
 
+.splat-warning small {
+  display: block;
+  margin-top: 4px;
+  color: #68463a;
+  overflow-wrap: anywhere;
+}
+
 .viewport-toolbar {
   background: #fbfaf5;
 }
@@ -779,6 +786,46 @@ kbd {
 
 .artifact-link:hover {
   color: var(--accent-hover);
+}
+
+.build-family + .build-family {
+  margin-top: 4px;
+}
+
+.variant-select {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #626a6c;
+  font: 700 10px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.variant-select select {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 30px 8px 10px;
+  border: 1px solid #c7c2b6;
+  border-radius: 8px;
+  background: #fffaf2;
+  color: #303739;
+  font: 650 12px/1.2 var(--sans);
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.variant-select select:hover,
+.variant-select select:focus {
+  border-color: #d7885f;
+  outline: none;
+  box-shadow: 0 0 0 3px #d75f2b18;
+}
+
+.asset-variant-select {
+  margin: 7px 0 10px 40px;
 }
 
 @media (max-width: 980px) {

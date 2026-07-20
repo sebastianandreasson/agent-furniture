@@ -16,6 +16,9 @@ from querycad.models.entryway_bench.parts import (
     EXTENSION_SHELF_RAIL,
     EXTENSION_SHELF_SLAT,
     EXTENSION_SHELF_STOPPER,
+    EXTENSION_STORAGE_BACK,
+    EXTENSION_STORAGE_DIVIDER,
+    EXTENSION_STORAGE_FLOOR,
     EXTENSION_TOP_RAIL_END,
     EXTENSION_TOP_RAIL_LONG,
     LEG,
@@ -25,6 +28,7 @@ from querycad.models.entryway_bench.parts import (
     SHELF_SLAT,
     TOP_RAIL_END,
     TOP_RAIL_LONG,
+    UMBRELLA_HOLDER_FRONT,
 )
 from querycad.models.entryway_bench.spec import EntrywayBenchSpec
 
@@ -91,7 +95,7 @@ def _hardware(
             drive="T20",
             thread="partial-thread wood screw",
             finish="indoor zinc",
-            application="Shelf slats and angled-shelf retaining stop",
+            application="Shelf slats, shoe stop, and extension storage panels",
             notes=(
                 "The 3.0 mm pilot is a hardwood prototype assumption; confirm "
                 "against the selected screw root diameter and an offcut."
@@ -315,6 +319,8 @@ def _add_frame_connections(
         levels,
         step,
     ) in standard_connections:
+        if spec.extension_mode == "none" and source_part == EXTENSION_TOP_RAIL_END:
+            continue
         plan.add_connection(
             joint_id=joint_id,
             description=description,
@@ -335,6 +341,9 @@ def _add_frame_connections(
             ),
             assembly_step=step,
         )
+
+    if spec.extension_mode == "none":
+        return
 
     plan.add_connection(
         joint_id="J05-EXT-TOP-OUTER-ENDS",
@@ -425,6 +434,9 @@ def _add_frame_connections(
         notes=JUNCTION_NOTE,
     )
 
+    if spec.extension_mode != "shoe_shelf":
+        return
+
     plan.add_connection(
         joint_id="J10-EXT-SHELF-OUTER-ENDS",
         description="Outer ends of angled shelf rails to the two outer legs",
@@ -508,7 +520,7 @@ def _add_top_connections(
 ) -> None:
     plan.add_connection(
         joint_id="J14-MAIN-DECK",
-        description="One-piece L-shaped deck to main long rails",
+        description="Seat deck to main long rails",
         target_part_number=SEAT_BASE,
         operation=_upward_pocket_holes(
             operation_id="DR-TOP-RAIL-LONG-DECK",
@@ -523,6 +535,9 @@ def _add_top_connections(
         ),
         assembly_step=4,
     )
+    if spec.extension_mode != "shoe_shelf":
+        return
+
     plan.add_connection(
         joint_id="J15-EXTENSION-DECK",
         description="Extension wing of L-shaped deck to extension rails",
@@ -591,6 +606,9 @@ def _add_shelf_connections(
         operation=main_clearance,
         assembly_step=5,
     )
+
+    if spec.extension_mode != "shoe_shelf":
+        return
 
     extension_clearance = DrillOperation(
         operation_id="DR-EXT-SHELF-SLAT-CLEARANCE",
@@ -702,6 +720,9 @@ def _add_transfer_pilots(
             notes="Transfer from the clearance-drilled slats during a dry fit.",
         )
     )
+    if spec.extension_mode != "shoe_shelf":
+        return
+
     plan.add_operation(
         DrillOperation(
             operation_id="DR-EXT-SHELF-RAIL-PILOTS",
@@ -757,6 +778,167 @@ def _add_transfer_pilots(
     )
 
 
+def _add_storage_connections(
+    plan: JoineryPlan,
+    spec: EntrywayBenchSpec,
+    layout: BenchLayout,
+    frame_fastener: FastenerSpec,
+    panel_fastener: FastenerSpec,
+) -> None:
+    """Document the umbrella module's panel joints from its cut-stock datums."""
+
+    if spec.extension_mode != "umbrella_storage":
+        return
+
+    panel_height = layout.top_rail_z - spec.storage_floor_top_height
+    plan.add_connection(
+        joint_id="J19-STORAGE-BACK-LEGS",
+        description="Storage back panel to the two back legs",
+        target_part_number=LEG,
+        operation=rail_end_pocket_holes(
+            operation_id="DR-STORAGE-BACK-ENDS",
+            part_number=EXTENSION_STORAGE_BACK,
+            label="Pocket holes at both storage-back ends",
+            run_axis="x",
+            length=layout.storage_run_length,
+            levels=(panel_height / 4, panel_height * 3 / 4),
+            setback=END_SETBACK,
+            face="inside face",
+            bit_diameter=spec.pocket_hole_bit_diameter,
+            angle_deg=spec.pocket_hole_angle_deg,
+            fastener_code=frame_fastener.code,
+            notes=POCKET_NOTE,
+        ),
+        assembly_step=5,
+    )
+
+    back_floor = DrillOperation(
+        operation_id="DR-STORAGE-BACK-FLOOR",
+        part_number=EXTENSION_STORAGE_BACK,
+        label="Clearance holes along the storage-back bottom edge",
+        kind="countersunk_clearance",
+        face="inside face",
+        view_axes=("x", "z"),
+        diameter_mm=spec.slat_clearance_hole_diameter,
+        points=tuple(
+            DrillPoint(
+                (
+                    layout.storage_run_length * index / 5,
+                    spec.storage_panel_thickness / 2,
+                    0.0,
+                ),
+                (0.0, 0.0, -1.0),
+                f"floor fixing {index}",
+            )
+            for index in range(1, 5)
+        ),
+        depth_mm=spec.storage_panel_thickness,
+        countersink_diameter_mm=spec.slat_countersink_diameter,
+        angle_deg=90.0,
+        fastener_code=panel_fastener.code,
+        counts_fastener=True,
+        notes="Dry-fit square, then transfer the pilot locations into the storage floor.",
+    )
+    plan.add_connection(
+        joint_id="J20-STORAGE-BACK-FLOOR",
+        description="Storage back panel to storage floor",
+        target_part_number=EXTENSION_STORAGE_FLOOR,
+        operation=back_floor,
+        assembly_step=5,
+    )
+
+    divider_floor = DrillOperation(
+        operation_id="DR-STORAGE-DIVIDER-FLOOR",
+        part_number=EXTENSION_STORAGE_DIVIDER,
+        label="Clearance holes through the divider bottom edge",
+        kind="countersunk_clearance",
+        face="inside face",
+        view_axes=("y", "z"),
+        diameter_mm=spec.slat_clearance_hole_diameter,
+        points=tuple(
+            DrillPoint(
+                (
+                    spec.storage_panel_thickness / 2,
+                    (layout.storage_inner_depth - spec.storage_panel_thickness) * index / 3,
+                    0.0,
+                ),
+                (0.0, 0.0, -1.0),
+                f"floor fixing {index}",
+            )
+            for index in range(1, 3)
+        ),
+        depth_mm=spec.storage_panel_thickness,
+        countersink_diameter_mm=spec.slat_countersink_diameter,
+        angle_deg=90.0,
+        fastener_code=panel_fastener.code,
+        counts_fastener=True,
+        notes="Clamp the divider square before transferring pilots into the floor.",
+    )
+    plan.add_connection(
+        joint_id="J21-STORAGE-DIVIDER-FLOOR",
+        description="Umbrella compartment divider to storage floor",
+        target_part_number=EXTENSION_STORAGE_FLOOR,
+        operation=divider_floor,
+        assembly_step=5,
+    )
+
+    for inner, joint_id, operation_id, target, description in (
+        (
+            True,
+            "J22-UMBRELLA-FRONT-DIVIDER",
+            "DR-UMBRELLA-FRONT-INNER-END",
+            EXTENSION_STORAGE_DIVIDER,
+            "Umbrella retaining face to compartment divider",
+        ),
+        (
+            False,
+            "J23-UMBRELLA-FRONT-LEG",
+            "DR-UMBRELLA-FRONT-OUTER-END",
+            LEG,
+            "Umbrella retaining face to outer front leg",
+        ),
+    ):
+        position, axis, end_label = _extension_end_x(
+            layout,
+            spec.umbrella_compartment_width,
+            inner=inner,
+            setback=0.0,
+        )
+        plan.add_connection(
+            joint_id=joint_id,
+            description=description,
+            target_part_number=target,
+            operation=DrillOperation(
+                operation_id=operation_id,
+                part_number=UMBRELLA_HOLDER_FRONT,
+                label=f"Clearance holes at umbrella-front {end_label}",
+                kind="countersunk_clearance",
+                face=end_label,
+                view_axes=("x", "z"),
+                diameter_mm=spec.slat_clearance_hole_diameter,
+                points=tuple(
+                    DrillPoint(
+                        (
+                            position,
+                            spec.storage_panel_thickness / 2,
+                            spec.umbrella_front_height * index / 3,
+                        ),
+                        axis,
+                        f"{end_label} fixing {index}",
+                    )
+                    for index in range(1, 3)
+                ),
+                depth_mm=spec.storage_panel_thickness,
+                countersink_diameter_mm=spec.slat_countersink_diameter,
+                angle_deg=90.0,
+                fastener_code=panel_fastener.code,
+                counts_fastener=True,
+                notes="Transfer pilots after clamping the retaining face flush.",
+            ),
+            assembly_step=6,
+        )
+
+
 def build_joinery_schedule(
     spec: EntrywayBenchSpec,
     layout: BenchLayout,
@@ -765,22 +947,33 @@ def build_joinery_schedule(
     """Build a count-safe schedule from the same part catalog used for geometry."""
 
     frame_fastener, top_fastener, slat_fastener, connector, dowel = _hardware(spec)
-    plan = JoineryPlan(
-        catalog.quantity,
-        status="prototype_not_structurally_certified",
-        notes=(
-            "Indoor six-leg prototype with a one-piece plywood deck; no design loads have "
-            "been certified.",
-            "The removed transition leg transfers seat load through the flush apron joint "
-            "and lower-shelf load into the main lower-shelf end rail. Load-test both paths "
-            "before use.",
+    notes = (
+        "Indoor four-leg prototype without an extension; no design loads have been certified.",
+        "Confirm material grades, moisture, edge distances, pilots, and jig settings on "
+        "full-scale offcuts before fabrication.",
+        "Pocket-hole locations are jig marks; slat clearance holes are cut CAD.",
+    )
+    if spec.extension_mode != "none":
+        notes = (
+            "Indoor six-leg prototype with a plywood seat deck; no design loads have been "
+            "certified.",
+            "The extension module transfers seat load through the flush apron joint. "
+            "Load-test the selected storage module and its junction before use.",
             "Confirm material grades, connector system, moisture, edge distances, pilots, "
             "and jig settings on full-scale offcuts before fabrication.",
             "Pocket and connector locations are jig marks; slat clearance holes are cut CAD.",
-        ),
-    ).add_fasteners(frame_fastener, top_fastener, slat_fastener, connector, dowel)
+        )
+
+    plan = JoineryPlan(
+        catalog.quantity,
+        status="prototype_not_structurally_certified",
+        notes=notes,
+    ).add_fasteners(frame_fastener, top_fastener, slat_fastener)
+    if spec.extension_mode != "none":
+        plan.add_fasteners(connector, dowel)
     _add_frame_connections(plan, spec, layout, frame_fastener, connector, dowel)
     _add_top_connections(plan, spec, layout, top_fastener)
     _add_shelf_connections(plan, spec, layout, slat_fastener)
     _add_transfer_pilots(plan, spec, layout, slat_fastener)
+    _add_storage_connections(plan, spec, layout, frame_fastener, slat_fastener)
     return plan.build()

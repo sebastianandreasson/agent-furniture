@@ -6,7 +6,7 @@ import type { CatalogDesign } from '../types'
 import { CameraRig } from './CameraRig'
 import { FurnitureModel } from './FurnitureModel'
 import { RoomProxy } from './RoomProxy'
-import { StarterSplat } from './StarterSplat'
+import { RoomSplat } from './RoomSplat'
 import { StudioLighting } from './StudioLighting'
 
 export const EditorScene = memo(function EditorScene({
@@ -14,7 +14,7 @@ export const EditorScene = memo(function EditorScene({
   onSplatError,
 }: {
   design: CatalogDesign | null
-  onSplatError: (message: string) => void
+  onSplatError: (message: string | null) => void
 }) {
   const cameraView = useEditorStore((state) => state.cameraView)
   const layers = useEditorStore((state) => state.layers)
@@ -37,8 +37,10 @@ export const EditorScene = memo(function EditorScene({
       <fog attach="fog" args={['#f3f2ee', 7000, 12500]} />
       <StudioLighting />
 
-      {layers.room && <RoomProxy showGrid={layers.grid} />}
-      {layers.splat && <StarterSplat onError={onSplatError} />}
+      {(layers.room || layers.grid) && (
+        <RoomProxy showRoom={layers.room} showGrid={layers.grid} />
+      )}
+      {layers.splat && <RoomSplat onError={onSplatError} />}
       {layers.furniture && design && (
         <Suspense
           fallback={
@@ -54,7 +56,7 @@ export const EditorScene = memo(function EditorScene({
         </Suspense>
       )}
 
-      <CameraRig view={cameraView} />
+      <CameraRig view={cameraView} roomCapture={layers.splat} />
       {showHelpers && (
         <GizmoHelper alignment="bottom-right" margin={[88, 80]}>
           <GizmoViewport

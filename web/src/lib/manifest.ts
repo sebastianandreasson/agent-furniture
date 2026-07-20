@@ -48,6 +48,14 @@ function nullableNumber(value: unknown, message: string): number | null {
   return value
 }
 
+function identityString(value: unknown, fallback: string) {
+  if (value === undefined) return fallback
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error('The build manifest contains invalid variant identity.')
+  }
+  return value
+}
+
 function parsePart(value: unknown): ManifestPart {
   if (
     !isRecord(value) ||
@@ -376,6 +384,9 @@ export function parseManifest(value: unknown): FurnitureManifest {
 
   const parts = value.parts.map(parsePart)
   const joinery = parseJoinery(value.joinery, parts)
+  const familyId = identityString(value.family, value.name)
+  const variantId = identityString(value.variant, 'default')
+  const variantLabel = identityString(value.variant_label, 'Default')
   const countedOccurrences = parts.reduce(
     (total, part) => total + part.quantity,
     0,
@@ -390,6 +401,9 @@ export function parseManifest(value: unknown): FurnitureManifest {
     schemaVersion: 1,
     name: value.name,
     model: value.model,
+    familyId,
+    variantId,
+    variantLabel,
     units: 'mm',
     partOccurrences: value.part_occurrences,
     parts,
@@ -411,6 +425,21 @@ export function assertManifestMatchesDesign(
   if (manifest.model !== design.model) {
     mismatches.push(
       `model is "${manifest.model}" in the manifest but "${design.model}" in the catalog`,
+    )
+  }
+  if (manifest.familyId !== design.familyId) {
+    mismatches.push(
+      `family is "${manifest.familyId}" in the manifest but "${design.familyId}" in the catalog`,
+    )
+  }
+  if (manifest.variantId !== design.variantId) {
+    mismatches.push(
+      `variant is "${manifest.variantId}" in the manifest but "${design.variantId}" in the catalog`,
+    )
+  }
+  if (manifest.variantLabel !== design.variantLabel) {
+    mismatches.push(
+      `variant label is "${manifest.variantLabel}" in the manifest but "${design.variantLabel}" in the catalog`,
     )
   }
   if (manifest.partOccurrences !== design.partOccurrences) {

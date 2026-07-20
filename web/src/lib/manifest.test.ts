@@ -93,6 +93,9 @@ const DESIGN: CatalogDesign = {
   id: 'entryway-bench',
   name: 'entryway-bench',
   model: 'entryway_bench',
+  familyId: 'entryway-bench',
+  variantId: 'shoe-shelf',
+  variantLabel: 'Shoe shelf',
   revision: 'abc123',
   overallSizeMm: { x: 1200, y: 338, z: 480 },
   partOccurrences: 4,
@@ -108,6 +111,9 @@ function manifestJson(overrides: Record<string, unknown> = {}) {
     schema_version: 1,
     name: 'entryway-bench',
     model: 'entryway_bench',
+    family: 'entryway-bench',
+    variant: 'shoe-shelf',
+    variant_label: 'Shoe shelf',
     units: 'mm',
     part_occurrences: 4,
     parts: [PART],
@@ -230,6 +236,7 @@ describe('parseManifest', () => {
   it.each([
     ['name', { name: 'stale-bench' }, 'name is "stale-bench"'],
     ['model', { model: 'stale_model' }, 'model is "stale_model"'],
+    ['variant', { variant: 'stale' }, 'variant is "stale"'],
   ])(
     'rejects a manifest whose %s disagrees with the selected catalog design',
     (_field, overrides, expectedMessage) => {

@@ -51,11 +51,16 @@ npm run preview      # serve the production bundle
 - Every furniture placement is stored separately in browser local storage.
 - Geometry is never browser-scaled as a resizing operation; dimensions change in CadQuery.
 - CadQuery files are Z-up. The web scene is Y-up and keeps one world unit equal to one millimetre.
-- The remote starter splat is visual context only and has no dimensional or collision authority.
+- The included real-photo Mip-NeRF 360 room SPZ is visual context only and has no survey or collision
+  authority.
+- The room root visually registers reconstruction units with the millimetre workspace; it does not
+  assert that the capture itself has metric survey scale.
 
-The scene uses Drei for the streamed splat, GLB loading/cloning, transform controls, orbit controls,
-grid, progress UI, and orientation gizmo. Replace the starter URL in `src/scene/StarterSplat.tsx`
-when an apartment capture is ready.
+The scene uses the MIT-licensed Spark renderer for SPZ context and React Three Fiber/Drei for GLB
+loading, transform controls, orbit controls, grid, progress UI, and the orientation gizmo. The
+included sample is imported as a build asset from `public/splats/`; its attribution and calibrated
+root transform live beside the renderer in `src/scene/roomSplatConfig.ts`. Replace both when a real
+room capture and measured registration points are available.
 
 The Studio toolbar shows transform gizmos and the selected-object bounding box by default. Use the
 **Helpers** toggle to hide or restore all of those overlays together; placement remains unchanged.

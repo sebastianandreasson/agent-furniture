@@ -63,6 +63,15 @@ class Design:
     parameters: dict[str, Any]
     parts: tuple[Part, ...]
     joinery: JoinerySchedule = field(default_factory=JoinerySchedule)
+    family: str = ""
+    variant: str = "default"
+    variant_label: str = "Default"
+
+    @property
+    def family_id(self) -> str:
+        """Return the catalog grouping key, falling back to the standalone design name."""
+
+        return self.family or self.name
 
     def assembly(self) -> cq.Assembly:
         assembly = cq.Assembly(name=self.name)
@@ -91,6 +100,12 @@ class Design:
         return sum(part.quantity for part in self.parts)
 
     def validate(self) -> None:
+        if not self.family_id.strip():
+            raise ValueError("design family must be a non-empty string")
+        if not self.variant.strip():
+            raise ValueError("design variant must be a non-empty string")
+        if not self.variant_label.strip():
+            raise ValueError("design variant_label must be a non-empty string")
         if not self.parts:
             raise ValueError("a design must contain at least one part")
         placement_names: set[str] = set()

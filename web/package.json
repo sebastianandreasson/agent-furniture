@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "model:build": "cd .. && uv run querycad build designs/entryway-bench.json",
+    "model:build": "cd .. && uv run querycad build designs/entryway-bench.json && uv run querycad build designs/entryway-bench-umbrella.json && uv run querycad build designs/entryway-bench-no-extension.json",
     "predev": "npm run model:build",
     "dev": "vite",
     "dev:ui": "vite",
@@ -21,6 +21,7 @@
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
+    "@sparkjsdev/spark": "^2.1.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "three": "^0.185.1",

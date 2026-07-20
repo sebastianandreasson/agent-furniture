@@ -74,6 +74,9 @@ def _manifest(design: Design, artifacts: Iterable[Path], root: Path) -> dict[str
         "schema_version": 1,
         "name": design.name,
         "model": design.model,
+        "family": design.family_id,
+        "variant": design.variant,
+        "variant_label": design.variant_label,
         "units": "mm",
         "generator": {"querycad": __version__, "cadquery": version("cadquery")},
         "parameters": design.parameters,
@@ -118,6 +121,7 @@ def write_catalog(build_root: Path) -> Path:
     """Index complete builds for the Vite viewer without duplicating model metadata."""
     build_root.mkdir(parents=True, exist_ok=True)
     designs: list[dict[str, Any]] = []
+    variant_builds: dict[tuple[str, str], str] = {}
     for manifest_path in sorted(build_root.glob("*/manifest.json")):
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -145,18 +149,27 @@ def write_catalog(build_root: Path) -> Path:
             if matches:
                 artifacts[key] = _artifact_url(matches[0], build_root)
 
-        designs.append(
-            {
-                "id": build_dir.name,
-                "name": manifest["name"],
-                "model": manifest["model"],
-                "revision": _file_revision(glb_path),
-                "overallSizeMm": manifest["overall_size_mm"],
-                "partOccurrences": manifest["part_occurrences"],
-                "parameters": manifest["parameters"],
-                "artifacts": artifacts,
-            }
-        )
+        entry = {
+            "id": build_dir.name,
+            "name": manifest["name"],
+            "model": manifest["model"],
+            "familyId": manifest.get("family", manifest["name"]),
+            "variantId": manifest.get("variant", "default"),
+            "variantLabel": manifest.get("variant_label", "Default"),
+            "revision": _file_revision(glb_path),
+            "overallSizeMm": manifest["overall_size_mm"],
+            "partOccurrences": manifest["part_occurrences"],
+            "parameters": manifest["parameters"],
+            "artifacts": artifacts,
+        }
+        variant_key = (entry["familyId"], entry["variantId"])
+        if existing := variant_builds.get(variant_key):
+            raise ValueError(
+                f"duplicate catalog variant {variant_key[0]}/{variant_key[1]} "
+                f"in builds {existing} and {entry['id']}"
+            )
+        variant_builds[variant_key] = entry["id"]
+        designs.append(entry)
 
     catalog = {
         "schemaVersion": 1,

@@ -1,5 +1,8 @@
 {
   "name": "entryway-bench",
+  "family": "entryway-bench",
+  "variant": "shoe-shelf",
+  "variant_label": "Shoe shelf",
   "model": "entryway_bench",
   "parameters": {}
 }

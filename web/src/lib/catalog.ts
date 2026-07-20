@@ -18,6 +18,12 @@ function isDesign(value: unknown): value is CatalogDesign {
     typeof value.id === 'string' &&
     typeof value.name === 'string' &&
     typeof value.model === 'string' &&
+    typeof value.familyId === 'string' &&
+    value.familyId.length > 0 &&
+    typeof value.variantId === 'string' &&
+    value.variantId.length > 0 &&
+    typeof value.variantLabel === 'string' &&
+    value.variantLabel.length > 0 &&
     typeof value.revision === 'string' &&
     typeof value.artifacts.glb === 'string' &&
     typeof value.artifacts.manifest === 'string' &&
@@ -38,6 +44,18 @@ export function parseCatalog(value: unknown): BuildCatalog {
   }
   if (!Array.isArray(value.designs) || !value.designs.every(isDesign)) {
     throw new Error('The build catalog contains an invalid furniture entry.')
+  }
+  const identities = new Set<string>()
+  const designIds = new Set<string>()
+  for (const design of value.designs) {
+    const identity = `${design.familyId}\u0000${design.variantId}`
+    if (identities.has(identity) || designIds.has(design.id)) {
+      throw new Error(
+        'The build catalog contains duplicate furniture variants.',
+      )
+    }
+    identities.add(identity)
+    designIds.add(design.id)
   }
   return value as BuildCatalog
 }

@@ -6,6 +6,9 @@ const MANIFEST = {
   schemaVersion: 1,
   name: 'test-bench',
   model: 'bench',
+  familyId: 'test-bench',
+  variantId: 'default',
+  variantLabel: 'Default',
   units: 'mm',
   partOccurrences: 3,
   parts: [

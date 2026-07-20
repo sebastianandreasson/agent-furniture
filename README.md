@@ -14,6 +14,8 @@ uv run querycad list
 uv run querycad validate designs/dining-table.json
 uv run querycad build designs/dining-table.json
 uv run querycad build designs/entryway-bench.json
+uv run querycad build designs/entryway-bench-umbrella.json
+uv run querycad build designs/entryway-bench-no-extension.json
 uv run querycad build designs/beam-wall-bookshelf.json
 ```
 
@@ -55,9 +57,11 @@ npm install
 npm run dev
 ```
 
-Open `http://127.0.0.1:5173`. The editor streams an online starter Gaussian splat, loads the exact
-CadQuery GLB from `build/`, and provides move/rotate gizmos, numeric millimetre controls, snapping,
-camera presets, layer controls, and direct links to STEP, BOM, manifest, and GLB artifacts.
+Open `http://127.0.0.1:5173`. The editor loads an included real-photo Mip-NeRF 360 indoor Gaussian
+splat through the MIT-licensed Spark renderer, places the exact CadQuery GLB into that room, and provides
+move/rotate gizmos, numeric controls, snapping, camera presets, layer controls, and direct links to
+STEP, BOM, manifest, and GLB artifacts. The white studio remains available as an alternative scene
+layer and is mutually exclusive with the captured room.
 
 The Materials page turns a model's joinery contract into a printable build document. For the
 entryway bench it totals every screw specification, marks drill centres on part-face diagrams, lists
@@ -65,9 +69,14 @@ pilot/clearance/pocket-hole operations, sequences the joints, and links hover st
 assembly. See `docs/JOINERY_AND_DRILLING.md` for the coordinate contract and the intentionally
 conservative fabrication boundary.
 
-The default web lifecycle now builds the photo-derived entryway bench. Its editable defaults live in
-`EntrywayBenchSpec`; the design JSON contains optional variant overrides, and the visual assumptions
-behind the estimates are documented in `docs/ENTRYWAY_BENCH.md`.
+Builds with the same generated `familyId` appear as one furniture family with a variant dropdown in
+both Studio and Materials. The entryway bench can switch among **Shoe shelf**, **Umbrella storage**,
+and **No extension**; every choice replaces the model, BOM, drilling schedule, hardware totals, and
+material document together. All remain separate reproducible builds.
+
+The default web lifecycle builds all three photo-derived entryway bench variants. Their shared editable
+defaults live in `EntrywayBenchSpec`; each design JSON contains only identity and optional overrides,
+and the visual assumptions are documented in `docs/ENTRYWAY_BENCH.md`.
 
 After an agent changes or adds a model, run its normal QueryCAD build. The UI polls the catalog every
 second and uses the GLB content hash to replace changed geometry without losing the saved
@@ -90,7 +99,8 @@ Ask an agent in this repository for outcomes such as:
 > Add mortise-and-tenon joinery to the table, then test that all solids remain valid.
 
 The repository contract in `AGENTS.md` tells an agent how to make and verify those changes. A new
-design variant normally needs only a JSON file. A new furniture family gets a model module,
+parameter-only variant normally needs only a JSON file; a modular variant also adds its selected
+subassembly behind a spec value. A new furniture family gets a model module,
 registry entry, example specification, and tests. The public authoring Interface lives in
 `querycad.furniture`; the entryway bench is the canonical modular example and the apron table is the
 small single-file example. See `docs/FURNITURE_ARCHITECTURE.md` and `docs/ADDING_A_MODEL.md`.

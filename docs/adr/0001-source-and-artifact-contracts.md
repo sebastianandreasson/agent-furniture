@@ -12,9 +12,10 @@ sources of truth and stale previews.
 ## Decision
 
 Frozen Python design specifications and CadQuery model code are the source of furniture geometry.
-Design JSON files select a family and optionally override Python defaults for a variant. Standard
-builds generate a manifest and catalog as the artifact contract. The web studio discovers builds only
-through that contract and never hard-codes furniture families.
+Design JSON files select a family, give each independently buildable variant a stable identity, and
+optionally override Python defaults. Standard builds generate a manifest and catalog as the artifact
+contract. The web studio groups builds by catalog family metadata and switches their complete
+artifact sets; it never hard-codes furniture families or assembles variant geometry in React.
 
 ## Consequences
 

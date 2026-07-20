@@ -1,3 +1,3 @@
 export function formatModelName(value: string) {
-  return value.replaceAll('_', ' ')
+  return value.replaceAll(/[-_]+/g, ' ')
 }

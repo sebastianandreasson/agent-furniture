@@ -1,0 +1,10 @@
+{
+  "name": "entryway-bench-umbrella",
+  "family": "entryway-bench",
+  "variant": "umbrella-storage",
+  "variant_label": "Umbrella storage",
+  "model": "entryway_bench",
+  "parameters": {
+    "extension_mode": "umbrella_storage"
+  }
+}

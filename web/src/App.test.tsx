@@ -20,6 +20,9 @@ const TEST_CATALOG = {
       id: 'dining-table',
       name: 'dining-table',
       model: 'apron_table',
+      familyId: 'dining-table',
+      variantId: 'default',
+      variantLabel: 'Default',
       revision: '1234567890abcdef',
       overallSizeMm: { x: 1600, y: 800, z: 750 },
       partOccurrences: 9,
@@ -155,8 +158,12 @@ const TEST_MANIFEST = {
   },
 }
 
-vi.mock('./scene/StarterSplat', () => ({
-  STARTER_SPLAT_URL: 'https://example.test/sample.splat',
+vi.mock('./scene/roomSplatConfig', () => ({
+  ROOM_SPLAT: {
+    sourceUrl: 'https://example.test/room-source',
+    datasetUrl: 'https://example.test/dataset-source',
+    rendererUrl: 'https://example.test/renderer-source',
+  },
 }))
 vi.mock('./scene/EditorScene', () => ({
   EditorScene: ({
@@ -238,6 +245,45 @@ describe('QueryCAD editor shell', () => {
     await user.click(screen.getByRole('button', { name: /Rotate/ }))
 
     expect(useEditorStore.getState().transformMode).toBe('rotate')
+  })
+
+  it('switches complete generated variants from a compact dropdown', async () => {
+    const user = userEvent.setup()
+    const catalogWithVariant = structuredClone(TEST_CATALOG)
+    catalogWithVariant.designs[0].variantId = 'standard'
+    catalogWithVariant.designs[0].variantLabel = 'Standard'
+    catalogWithVariant.designs.push({
+      ...structuredClone(TEST_CATALOG.designs[0]),
+      id: 'dining-table-compact',
+      name: 'dining-table-compact',
+      variantId: 'compact',
+      variantLabel: 'Compact',
+      revision: 'compact123456789',
+      artifacts: {
+        ...structuredClone(TEST_CATALOG.designs[0].artifacts),
+        glb: '/dining-table-compact/dining-table-compact.glb',
+        manifest: '/dining-table-compact/manifest.json',
+      },
+    })
+    testDoubles.loadCatalog.mockResolvedValue(catalogWithVariant)
+
+    render(<App />)
+    await waitFor(() =>
+      expect(screen.getByTestId('mock-scene').textContent).toBe('dining-table'),
+    )
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'dining table variant' }),
+      'dining-table-compact',
+    )
+
+    await waitFor(() =>
+      expect(screen.getByTestId('mock-scene').textContent).toBe(
+        'dining-table-compact',
+      ),
+    )
+    expect(useEditorStore.getState().activeDesignId).toBe(
+      'dining-table-compact',
+    )
   })
 
   it('shows scene helpers by default and toggles them together', async () => {

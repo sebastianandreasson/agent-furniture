@@ -20,6 +20,7 @@ class EntrywayBenchSpec(FurnitureSpec):
     extension_length: float = 600.0
     extension_depth: float = 150.0
     extension_side: str = "left"
+    extension_mode: str = "shoe_shelf"
     frame_height: float = 520.0
     seat_base_thickness: float = 22.0
     seat_base_corner_radius: float = 3.0
@@ -39,6 +40,10 @@ class EntrywayBenchSpec(FurnitureSpec):
     extension_shelf_front_height: float = 90.0
     extension_shelf_stopper_height: float = 18.0
     extension_shelf_stopper_thickness: float = 12.0
+    storage_panel_thickness: float = 18.0
+    storage_floor_top_height: float = 90.0
+    umbrella_compartment_width: float = 180.0
+    umbrella_front_height: float = 180.0
     frame_pocket_screw_length: float = 38.0
     top_pocket_screw_length: float = 32.0
     pocket_hole_bit_diameter: float = 9.5
@@ -66,7 +71,7 @@ class EntrywayBenchSpec(FurnitureSpec):
     def validate(self) -> None:
         self.validate_basics(
             text_fields=("frame_material", "panel_material", "cushion_material"),
-            non_numeric_fields=("extension_side",),
+            non_numeric_fields=("extension_side", "extension_mode"),
             allow_zero=("seat_base_corner_radius",),
         )
         if not isinstance(self.shelf_slat_count, int):
@@ -75,21 +80,24 @@ class EntrywayBenchSpec(FurnitureSpec):
             raise ValueError("extension_slat_count must be an integer")
         if self.extension_side not in {"left", "right"}:
             raise ValueError("extension_side must be 'left' or 'right'")
+        if self.extension_mode not in {"shoe_shelf", "umbrella_storage", "none"}:
+            raise ValueError("extension_mode must be 'shoe_shelf', 'umbrella_storage', or 'none'")
         if self.shelf_slat_count < 2:
             raise ValueError("shelf_slat_count must be at least 2")
-        if self.extension_slat_count < 2:
+        if self.extension_mode == "shoe_shelf" and self.extension_slat_count < 2:
             raise ValueError("extension_slat_count must be at least 2")
 
         if self.length <= 2 * self.leg_size:
             raise ValueError("length is too small for two legs")
         if self.depth <= 2 * self.leg_size:
             raise ValueError("depth is too small for two legs")
-        if self.extension_length <= 2 * self.leg_size:
-            raise ValueError("extension_length is too small for its outer legs")
-        if self.extension_depth <= 2 * self.leg_size:
-            raise ValueError("extension_depth is too small for two outer legs")
-        if self.extension_depth >= self.depth:
-            raise ValueError("extension_depth must be smaller than depth to form an indent")
+        if self.extension_mode != "none":
+            if self.extension_length <= 2 * self.leg_size:
+                raise ValueError("extension_length is too small for its outer legs")
+            if self.extension_depth <= 2 * self.leg_size:
+                raise ValueError("extension_depth is too small for two outer legs")
+            if self.extension_depth >= self.depth:
+                raise ValueError("extension_depth must be smaller than depth to form an indent")
         if self.seat_base_thickness >= self.frame_height:
             raise ValueError("seat_base_thickness must be smaller than frame_height")
         if self.top_rail_thickness >= self.leg_size:
@@ -101,7 +109,10 @@ class EntrywayBenchSpec(FurnitureSpec):
             raise ValueError("cushion must fit within the seat base")
         if self.seat_base_corner_radius >= min(self.length, self.depth) / 2:
             raise ValueError("seat_base_corner_radius is too large for the seat base")
-        if self.seat_base_corner_radius >= self.extension_depth / 2:
+        if (
+            self.extension_mode != "none"
+            and self.seat_base_corner_radius >= self.extension_depth / 2
+        ):
             raise ValueError("seat_base_corner_radius is too large for the extension top")
         cushion_radius_limit = (
             min(self.cushion_length, self.cushion_depth, self.cushion_thickness) / 2
@@ -127,55 +138,72 @@ class EntrywayBenchSpec(FurnitureSpec):
             raise ValueError("length leaves no usable shelf slat span")
         if self.shelf_slat_count * self.shelf_slat_width > usable_slat_span:
             raise ValueError("shelf slats overlap; reduce their count or width")
-        extension_slat_span = self.extension_length - self.leg_size - 2 * self.shelf_slat_end_gap
-        if extension_slat_span <= 0:
-            raise ValueError("extension_length leaves no usable shelf slat span")
-        if self.extension_slat_count * self.shelf_slat_width > extension_slat_span:
-            raise ValueError("extension shelf slats overlap; reduce their count or width")
+        if self.extension_mode == "shoe_shelf":
+            extension_slat_span = (
+                self.extension_length - self.leg_size - 2 * self.shelf_slat_end_gap
+            )
+            if extension_slat_span <= 0:
+                raise ValueError("extension_length leaves no usable shelf slat span")
+            if self.extension_slat_count * self.shelf_slat_width > extension_slat_span:
+                raise ValueError("extension shelf slats overlap; reduce their count or width")
 
-        if self.extension_shelf_angle_deg >= 60:
-            raise ValueError("extension_shelf_angle_deg must be smaller than 60 degrees")
-        extension_shelf_angle = radians(self.extension_shelf_angle_deg)
-        extension_shelf_projection = self.extension_shelf_length * cos(extension_shelf_angle)
-        extension_support_span = self.extension_depth - self.leg_size
-        if extension_shelf_projection < extension_support_span:
-            raise ValueError(
-                "extension shelf is too short to reach both support rails; increase "
-                "extension_shelf_length or reduce extension_shelf_angle_deg"
+            if self.extension_shelf_angle_deg >= 60:
+                raise ValueError("extension_shelf_angle_deg must be smaller than 60 degrees")
+            extension_shelf_angle = radians(self.extension_shelf_angle_deg)
+            extension_shelf_projection = self.extension_shelf_length * cos(extension_shelf_angle)
+            extension_support_span = self.extension_depth - self.leg_size
+            if extension_shelf_projection < extension_support_span:
+                raise ValueError(
+                    "extension shelf is too short to reach both support rails; increase "
+                    "extension_shelf_length or reduce extension_shelf_angle_deg"
+                )
+            extension_back_leg_y = self.depth / 2 - self.leg_size / 2
+            extension_shelf_front_y = extension_back_leg_y - extension_shelf_projection
+            if extension_shelf_front_y < -self.depth / 2:
+                raise ValueError(
+                    "extension shelf projects beyond the main bench footprint; reduce "
+                    "extension_shelf_length or increase extension_shelf_angle_deg"
+                )
+            extension_shelf_bottom = self.extension_shelf_front_height - (
+                self.shelf_slat_thickness * cos(extension_shelf_angle)
             )
-        extension_back_leg_y = self.depth / 2 - self.leg_size / 2
-        extension_shelf_front_y = extension_back_leg_y - extension_shelf_projection
-        if extension_shelf_front_y < -self.depth / 2:
-            raise ValueError(
-                "extension shelf projects beyond the main bench footprint; reduce "
-                "extension_shelf_length or increase extension_shelf_angle_deg"
+            if extension_shelf_bottom <= 0:
+                raise ValueError("extension shelf front edge must remain above the floor")
+            extension_shelf_back_top = self.extension_shelf_front_height + (
+                self.extension_shelf_length * sin(extension_shelf_angle)
             )
-        extension_shelf_bottom = self.extension_shelf_front_height - (
-            self.shelf_slat_thickness * cos(extension_shelf_angle)
-        )
-        if extension_shelf_bottom <= 0:
-            raise ValueError("extension shelf front edge must remain above the floor")
-        extension_shelf_back_top = self.extension_shelf_front_height + (
-            self.extension_shelf_length * sin(extension_shelf_angle)
-        )
-        if extension_shelf_back_top >= top_rail_bottom:
-            raise ValueError(
-                "extension shelf collides with the top rails; lower its front height, "
-                "length, or angle"
+            if extension_shelf_back_top >= top_rail_bottom:
+                raise ValueError(
+                    "extension shelf collides with the top rails; lower its front height, "
+                    "length, or angle"
+                )
+            if self.extension_shelf_stopper_thickness >= self.extension_shelf_length:
+                raise ValueError(
+                    "extension_shelf_stopper_thickness must be smaller than extension_shelf_length"
+                )
+            extension_shelf_stopper_top = (
+                self.extension_shelf_front_height
+                + self.extension_shelf_stopper_thickness * sin(extension_shelf_angle)
+                + self.extension_shelf_stopper_height * cos(extension_shelf_angle)
             )
-        if self.extension_shelf_stopper_thickness >= self.extension_shelf_length:
-            raise ValueError(
-                "extension_shelf_stopper_thickness must be smaller than extension_shelf_length"
-            )
-        extension_shelf_stopper_top = (
-            self.extension_shelf_front_height
-            + self.extension_shelf_stopper_thickness * sin(extension_shelf_angle)
-            + self.extension_shelf_stopper_height * cos(extension_shelf_angle)
-        )
-        if extension_shelf_stopper_top >= top_rail_bottom:
-            raise ValueError(
-                "extension shelf stopper collides with the top rails; reduce its height"
-            )
+            if extension_shelf_stopper_top >= top_rail_bottom:
+                raise ValueError(
+                    "extension shelf stopper collides with the top rails; reduce its height"
+                )
+        elif self.extension_mode == "umbrella_storage":
+            storage_inner_depth = self.extension_depth - 2 * self.leg_size
+            storage_run_length = self.extension_length - self.leg_size
+            if self.storage_panel_thickness >= storage_inner_depth:
+                raise ValueError("storage_panel_thickness leaves no usable storage depth")
+            if not self.storage_panel_thickness < self.storage_floor_top_height < top_rail_bottom:
+                raise ValueError(
+                    "storage_floor_top_height must leave room below the extension top rails"
+                )
+            if self.umbrella_compartment_width + self.storage_panel_thickness >= storage_run_length:
+                raise ValueError("umbrella_compartment_width leaves no general storage area")
+            storage_clear_height = top_rail_bottom - self.storage_floor_top_height
+            if self.umbrella_front_height >= storage_clear_height:
+                raise ValueError("umbrella_front_height must fit below the extension top rails")
         if self.pocket_hole_bit_diameter >= min(self.top_rail_thickness, self.shelf_rail_thickness):
             raise ValueError("pocket_hole_bit_diameter must fit within the support rails")
         if self.slat_clearance_hole_diameter <= self.slat_screw_diameter:
@@ -192,11 +220,12 @@ class EntrywayBenchSpec(FurnitureSpec):
             raise ValueError(
                 "slat_screw_length must pass through the slat without exiting its support rail"
             )
-        if self.connector_clearance_hole_diameter <= self.connector_bolt_diameter:
-            raise ValueError(
-                "connector_clearance_hole_diameter must exceed connector_bolt_diameter"
-            )
-        if self.connector_bolt_length <= self.top_rail_thickness:
-            raise ValueError("connector_bolt_length must reach beyond the extension rail")
-        if self.alignment_dowel_length <= self.top_rail_thickness:
-            raise ValueError("alignment_dowel_length must reach beyond the extension rail")
+        if self.extension_mode != "none":
+            if self.connector_clearance_hole_diameter <= self.connector_bolt_diameter:
+                raise ValueError(
+                    "connector_clearance_hole_diameter must exceed connector_bolt_diameter"
+                )
+            if self.connector_bolt_length <= self.top_rail_thickness:
+                raise ValueError("connector_bolt_length must reach beyond the extension rail")
+            if self.alignment_dowel_length <= self.top_rail_thickness:
+                raise ValueError("alignment_dowel_length must reach beyond the extension rail")

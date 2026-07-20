@@ -41,6 +41,25 @@ models/my_family/
 Not every family needs every file. Split only where it improves Locality and gives a concept a clear
 owner. A shallow wrapper around one line of CadQuery is not a useful Module.
 
+## Adding a variant
+
+A variant of an existing family is another design JSON with a unique `name`, the same `model` and
+`family`, and its own `variant` and `variant_label`. Put only deliberate parameter overrides in its
+`parameters` object. When variants exchange physical modules, keep the selection in the frozen spec
+and compose the chosen subassembly in the family's part and joinery builders. Each variant must
+remain independently valid and exportable.
+
+```json
+{
+  "name": "entryway-bench-umbrella",
+  "family": "entryway-bench",
+  "variant": "umbrella-storage",
+  "variant_label": "Umbrella storage",
+  "model": "entryway_bench",
+  "parameters": { "extension_mode": "umbrella_storage" }
+}
+```
+
 ## Stable output contract
 
 Part numbers and placement names are public output identifiers. Keep them stable after a design has
@@ -50,5 +69,7 @@ BOM; colors aid assembly review but do not imply a finish specification.
 
 The CLI always writes `manifest.json`. It contains resolved parameters, the overall bounding box,
 part quantities, material labels, volumes, placements, joinery, package versions, and artifact paths.
-The standard build also refreshes `build/catalog.json`. Downstream automation and the web studio must
-consume these generated contracts rather than scrape console output or hard-code a furniture family.
+It also contains family and variant identity. The standard build refreshes `build/catalog.json`,
+where those fields become `familyId`, `variantId`, and `variantLabel`. Downstream automation and the
+web studio must consume these generated contracts rather than scrape console output or hard-code a
+furniture family.

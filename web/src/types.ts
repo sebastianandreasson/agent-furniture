@@ -14,6 +14,9 @@ export type CatalogDesign = {
   id: string
   name: string
   model: string
+  familyId: string
+  variantId: string
+  variantLabel: string
   revision: string
   overallSizeMm: { x: number; y: number; z: number }
   partOccurrences: number
@@ -126,6 +129,9 @@ export type FurnitureManifest = {
   schemaVersion: 1
   name: string
   model: string
+  familyId: string
+  variantId: string
+  variantLabel: string
   units: 'mm'
   partOccurrences: number
   parts: ManifestPart[]

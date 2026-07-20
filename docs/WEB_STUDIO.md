@@ -75,6 +75,12 @@ schedules, and assembly highlighting. `App.tsx` only selects the current catalog
 the active page. Manifest parsing remains one deep, generic adapter in `lib/manifest.ts`, so every UI
 feature receives the same validated artifact contract.
 
-The current online splat is a CORS-enabled sample hosted on GitHub. It proves mixed mesh/splat
-rendering and streaming, but it is deliberately labelled uncalibrated. Replace it with a captured
-apartment asset and a calibrated `ApartmentRoot` transform before using visual alignment for planning.
+The Studio includes a compressed reconstruction of the real-photo Mip-NeRF 360 `room` scene as a
+local build asset. Keeping the sample local avoids CORS and redirect failures, while Spark provides
+reliable mixed mesh/splat rendering. `roomSplatConfig.ts` applies one reviewed visual scale and
+floor/room offset at the scene boundary. The captured-room and opaque white-studio layers are
+mutually exclusive; the furniture and 100 mm grid remain independent.
+
+This registration makes the sample useful for interaction and scale perception, but it does not turn
+the capture into survey geometry. Replace the SPZ and its root transform with a site capture plus
+measured registration points before relying on visual alignment for a real installation.

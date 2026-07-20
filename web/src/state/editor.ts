@@ -12,7 +12,14 @@ export const DEFAULT_PLACEMENT: Placement = {
   rotationDeg: [0, 0, 0],
 }
 
-type LayerKey = 'splat' | 'furniture' | 'room' | 'grid'
+export type LayerKey = 'splat' | 'furniture' | 'room' | 'grid'
+
+export const DEFAULT_LAYERS: Record<LayerKey, boolean> = {
+  splat: true,
+  furniture: true,
+  room: false,
+  grid: false,
+}
 
 type EditorState = {
   activeDesignId: string | null
@@ -46,7 +53,7 @@ export const useEditorStore = create<EditorState>()(
       showHelpers: true,
       showTextures: true,
       cameraView: 'perspective',
-      layers: { splat: true, furniture: true, room: true, grid: true },
+      layers: DEFAULT_LAYERS,
       setActiveDesign: (id) => set({ activeDesignId: id }),
       setPlacement: (id, placement) =>
         set((state) => ({
@@ -85,9 +92,13 @@ export const useEditorStore = create<EditorState>()(
       setShowTextures: (showTextures) => set({ showTextures }),
       setCameraView: (cameraView) => set({ cameraView }),
       toggleLayer: (layer) =>
-        set((state) => ({
-          layers: { ...state.layers, [layer]: !state.layers[layer] },
-        })),
+        set((state) => {
+          const enabled = !state.layers[layer]
+          const layers = { ...state.layers, [layer]: enabled }
+          if (enabled && layer === 'splat') layers.room = false
+          if (enabled && layer === 'room') layers.splat = false
+          return { layers }
+        }),
     }),
     {
       name: 'querycad-editor-v1',

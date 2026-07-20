@@ -995,6 +995,24 @@
   min-width: 210px;
 }
 
+.mw-design-picker {
+  min-width: 390px;
+  display: grid;
+  grid-template-columns: minmax(160px, 1.15fr) minmax(150px, 0.85fr);
+  align-items: end;
+  gap: 10px;
+}
+
+.mw-design-picker .mw-build-select,
+.mw-design-picker .materials-variant-select {
+  min-width: 0;
+}
+
+.materials-variant-select select {
+  min-height: 38px;
+  font-size: 13px;
+}
+
 .mw-workbench {
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(330px, 0.55fr);
@@ -2001,8 +2019,15 @@
   }
 
   .mw-material-rollup article,
-  .mw-build-select {
+  .mw-build-select,
+  .materials-variant-select {
     width: 100%;
+  }
+
+  .mw-design-picker {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: 1fr;
   }
 
   .mw-tabs {

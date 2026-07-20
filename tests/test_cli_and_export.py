@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from querycad.cli import main
 from querycad.config import load_design
 from querycad.export import export_design, write_catalog
@@ -39,6 +41,9 @@ def test_export_bom_svg_and_stl(tmp_path: Path) -> None:
     manifest = json.loads((tmp_path / "manifest.json").read_text())
     assert manifest["overall_size_mm"] == {"x": 1600.0, "y": 800.0, "z": 750.0}
     assert manifest["part_occurrences"] == 9
+    assert manifest["family"] == "dining-table"
+    assert manifest["variant"] == "default"
+    assert manifest["variant_label"] == "Default"
     assert manifest["parts"][0]["color_rgba"] == list(design.parts[0].color)
 
 
@@ -55,9 +60,33 @@ def test_catalog_indexes_a_complete_glb_build(tmp_path: Path) -> None:
     assert len(catalog["designs"]) == 1
     entry = catalog["designs"][0]
     assert entry["id"] == "dining-table"
+    assert entry["familyId"] == "dining-table"
+    assert entry["variantId"] == "default"
+    assert entry["variantLabel"] == "Default"
     assert entry["overallSizeMm"] == {"x": 1600.0, "y": 800.0, "z": 750.0}
     assert entry["artifacts"]["glb"] == "/dining-table/dining-table.glb"
     assert len(entry["revision"]) == 16
+
+
+def test_catalog_rejects_duplicate_family_variant_identity(tmp_path: Path) -> None:
+    manifest = {
+        "name": "bench",
+        "model": "entryway_bench",
+        "family": "bench",
+        "variant": "shoe",
+        "variant_label": "Shoe shelf",
+        "overall_size_mm": {"x": 1, "y": 1, "z": 1},
+        "part_occurrences": 1,
+        "parameters": {},
+    }
+    for build_name in ("bench-one", "bench-two"):
+        build_dir = tmp_path / build_name
+        build_dir.mkdir()
+        (build_dir / "manifest.json").write_text(json.dumps(manifest))
+        (build_dir / f"{build_name}.glb").write_bytes(build_name.encode())
+
+    with pytest.raises(ValueError, match="duplicate catalog variant bench/shoe"):
+        write_catalog(tmp_path)
 
 
 def test_bench_export_includes_hardware_and_drill_schedule(tmp_path: Path) -> None:

@@ -27,6 +27,10 @@ EXTENSION_TOP_RAIL_END = "EXTENSION-TOP-RAIL-END-001"
 EXTENSION_SHELF_RAIL = "EXTENSION-SHELF-RAIL-001"
 EXTENSION_SHELF_SLAT = "EXTENSION-SHELF-SLAT-001"
 EXTENSION_SHELF_STOPPER = "EXTENSION-SHELF-STOPPER-001"
+EXTENSION_STORAGE_FLOOR = "EXTENSION-STORAGE-FLOOR-001"
+EXTENSION_STORAGE_BACK = "EXTENSION-STORAGE-BACK-001"
+EXTENSION_STORAGE_DIVIDER = "EXTENSION-STORAGE-DIVIDER-001"
+UMBRELLA_HOLDER_FRONT = "UMBRELLA-HOLDER-FRONT-001"
 CUSHION = "CUSHION-001"
 CUSHION_PIPING = "CUSHION-PIPING-001"
 
@@ -40,9 +44,14 @@ def _l_shaped_seat_deck(
     spec: EntrywayBenchSpec,
     layout: BenchLayout,
 ) -> cq.Workplane:
-    """Make the main seat and indented extension as one stable sheet part."""
+    """Make the seated deck, including the exposed wing only when selected."""
 
     main = stock_box(spec.length, spec.depth, spec.seat_base_thickness)
+    if spec.extension_mode != "shoe_shelf":
+        if spec.seat_base_corner_radius:
+            main = main.edges("|Z").fillet(spec.seat_base_corner_radius)
+        return main
+
     extension = stock_box(
         spec.extension_length,
         spec.extension_depth,
@@ -63,11 +72,19 @@ def add_main_bench(
 
     catalog.define(
         number=SEAT_BASE,
-        description="One-piece L-shaped seat and extension deck",
+        description=(
+            "One-piece L-shaped seat and extension deck"
+            if spec.extension_mode == "shoe_shelf"
+            else (
+                "Main seat deck beside open umbrella storage"
+                if spec.extension_mode == "umbrella_storage"
+                else "Main bench seat deck"
+            )
+        ),
         material=spec.panel_material,
         shape=_l_shaped_seat_deck(spec, layout),
         stock_size_mm=(
-            spec.length + spec.extension_length,
+            spec.length + (spec.extension_length if spec.extension_mode == "shoe_shelf" else 0.0),
             spec.depth,
             spec.seat_base_thickness,
         ),
@@ -144,25 +161,26 @@ def add_main_bench(
     shelf_rails.place("shelf_rail_lower_front", (0.0, -layout.leg_y, shelf_rail_z))
     shelf_rails.place("shelf_rail_lower_back", (0.0, layout.leg_y, shelf_rail_z))
 
-    catalog.define(
-        number=SHELF_RAIL_END,
-        description="Lower shelf end rail receiving the leg-free extension shelf",
-        material=spec.frame_material,
-        shape=stock_box(
-            spec.shelf_rail_thickness,
-            layout.end_member_depth,
-            spec.shelf_rail_height,
-        ),
-        stock_size_mm=(
-            spec.shelf_rail_thickness,
-            layout.end_member_depth,
-            spec.shelf_rail_height,
-        ),
-        color=PAINT,
-    ).place(
-        "shelf_rail_extension_junction",
-        (layout.junction_shelf_rail_x, 0.0, layout.junction_shelf_rail_z),
-    )
+    if spec.extension_mode == "shoe_shelf":
+        catalog.define(
+            number=SHELF_RAIL_END,
+            description="Lower shelf end rail receiving the leg-free extension shelf",
+            material=spec.frame_material,
+            shape=stock_box(
+                spec.shelf_rail_thickness,
+                layout.end_member_depth,
+                spec.shelf_rail_height,
+            ),
+            stock_size_mm=(
+                spec.shelf_rail_thickness,
+                layout.end_member_depth,
+                spec.shelf_rail_height,
+            ),
+            color=PAINT,
+        ).place(
+            "shelf_rail_extension_junction",
+            (layout.junction_shelf_rail_x, 0.0, layout.junction_shelf_rail_z),
+        )
 
     slat_hole_y = layout.main_slat_depth / 2 - layout.main_slat_hole_inset
     shelf_slat_shape = top_countersunk_holes(
@@ -196,12 +214,12 @@ def add_main_bench(
         )
 
 
-def add_extension(
+def add_extension_frame(
     catalog: PartCatalog,
     spec: EntrywayBenchSpec,
     layout: BenchLayout,
 ) -> None:
-    """Add the clean six-leg extension and its angled slatted shelf."""
+    """Add the two legs and top rails shared by every extension variant."""
 
     legs = catalog.part(LEG)
     legs.place(
@@ -265,6 +283,14 @@ def add_extension(
         "extension_top_rail_end",
         (layout.extension_far_leg_x, layout.extension_center_y, layout.top_rail_z),
     )
+
+
+def add_shoe_shelf_extension(
+    catalog: PartCatalog,
+    spec: EntrywayBenchSpec,
+    layout: BenchLayout,
+) -> None:
+    """Add the original slanted shoe shelf extension."""
 
     shelf_rails = catalog.define(
         number=EXTENSION_SHELF_RAIL,
@@ -361,6 +387,128 @@ def add_extension(
         ),
         shelf_rotation,
     )
+
+
+def add_umbrella_storage_extension(
+    catalog: PartCatalog,
+    spec: EntrywayBenchSpec,
+    layout: BenchLayout,
+) -> None:
+    """Add open general storage and a retained umbrella compartment."""
+
+    panel_height = layout.top_rail_z - spec.storage_floor_top_height
+    catalog.define(
+        number=EXTENSION_STORAGE_FLOOR,
+        description="Flat extension storage floor",
+        material=spec.panel_material,
+        shape=stock_box(
+            layout.storage_run_length,
+            layout.storage_inner_depth,
+            spec.storage_panel_thickness,
+        ),
+        stock_size_mm=(
+            layout.storage_run_length,
+            layout.storage_inner_depth,
+            spec.storage_panel_thickness,
+        ),
+        color=PANEL,
+    ).place(
+        "extension_storage_floor",
+        (
+            layout.extension_rail_center_x,
+            layout.extension_center_y,
+            layout.storage_floor_bottom_z,
+        ),
+    )
+
+    catalog.define(
+        number=EXTENSION_STORAGE_BACK,
+        description="Back retaining panel for extension storage",
+        material=spec.panel_material,
+        shape=stock_box(
+            layout.storage_run_length,
+            spec.storage_panel_thickness,
+            panel_height,
+        ),
+        stock_size_mm=(
+            layout.storage_run_length,
+            spec.storage_panel_thickness,
+            panel_height,
+        ),
+        color=PANEL,
+    ).place(
+        "extension_storage_back",
+        (
+            layout.extension_rail_center_x,
+            layout.storage_back_center_y,
+            spec.storage_floor_top_height,
+        ),
+    )
+
+    catalog.define(
+        number=EXTENSION_STORAGE_DIVIDER,
+        description="Divider between umbrella and general storage compartments",
+        material=spec.panel_material,
+        shape=stock_box(
+            spec.storage_panel_thickness,
+            layout.storage_inner_depth - spec.storage_panel_thickness,
+            panel_height,
+        ),
+        stock_size_mm=(
+            spec.storage_panel_thickness,
+            layout.storage_inner_depth - spec.storage_panel_thickness,
+            panel_height,
+        ),
+        color=PANEL,
+    ).place(
+        "extension_storage_divider",
+        (
+            layout.storage_divider_center_x,
+            layout.storage_divider_center_y,
+            spec.storage_floor_top_height,
+        ),
+    )
+
+    catalog.define(
+        number=UMBRELLA_HOLDER_FRONT,
+        description="Low front retaining panel for umbrella compartment",
+        material=spec.panel_material,
+        shape=stock_box(
+            spec.umbrella_compartment_width,
+            spec.storage_panel_thickness,
+            spec.umbrella_front_height,
+        ),
+        stock_size_mm=(
+            spec.umbrella_compartment_width,
+            spec.storage_panel_thickness,
+            spec.umbrella_front_height,
+        ),
+        color=PANEL,
+    ).place(
+        "umbrella_holder_front",
+        (
+            layout.umbrella_front_center_x,
+            layout.storage_front_center_y,
+            spec.storage_floor_top_height,
+        ),
+    )
+
+
+def add_extension(
+    catalog: PartCatalog,
+    spec: EntrywayBenchSpec,
+    layout: BenchLayout,
+) -> None:
+    """Compose the shared extension frame with the selected storage module."""
+
+    if spec.extension_mode == "none":
+        return
+
+    add_extension_frame(catalog, spec, layout)
+    if spec.extension_mode == "shoe_shelf":
+        add_shoe_shelf_extension(catalog, spec, layout)
+    else:
+        add_umbrella_storage_extension(catalog, spec, layout)
 
 
 def add_upholstery(

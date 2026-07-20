@@ -61,10 +61,23 @@ def test_default_bench_geometry_and_bom_quantities() -> None:
     }
 
 
-@pytest.mark.parametrize("extension_side", ("left", "right"))
-def test_rigid_part_occurrences_do_not_interpenetrate(extension_side: str) -> None:
+@pytest.mark.parametrize(
+    ("extension_mode", "extension_side"),
+    (
+        ("shoe_shelf", "left"),
+        ("shoe_shelf", "right"),
+        ("umbrella_storage", "left"),
+        ("umbrella_storage", "right"),
+        ("none", "left"),
+    ),
+)
+def test_rigid_part_occurrences_do_not_interpenetrate(
+    extension_side: str,
+    extension_mode: str,
+) -> None:
     values = EntrywayBenchSpec().as_dict()
     values["extension_side"] = extension_side
+    values["extension_mode"] = extension_mode
     design = build_entryway_bench("interference-check", values)
     occurrences = [
         (
@@ -237,6 +250,138 @@ def test_extension_shoe_shelf_is_longer_than_its_depth_and_sloped() -> None:
     )
 
 
+def test_umbrella_variant_swaps_only_the_extension_storage_module() -> None:
+    spec = EntrywayBenchSpec(extension_mode="umbrella_storage")
+    design = build_entryway_bench("umbrella-bench", spec.as_dict())
+    parts = {part.number: part for part in design.parts}
+
+    assert design.total_occurrences() == 33
+    assert {part.number: part.quantity for part in design.parts} == {
+        "SEAT-BASE-001": 1,
+        "LEG-001": 6,
+        "TOP-RAIL-LONG-001": 2,
+        "TOP-RAIL-END-001": 2,
+        "SHELF-RAIL-001": 2,
+        "SHELF-SLAT-001": spec.shelf_slat_count,
+        "EXTENSION-TOP-RAIL-LONG-001": 2,
+        "EXTENSION-TOP-RAIL-END-001": 1,
+        "EXTENSION-STORAGE-FLOOR-001": 1,
+        "EXTENSION-STORAGE-BACK-001": 1,
+        "EXTENSION-STORAGE-DIVIDER-001": 1,
+        "UMBRELLA-HOLDER-FRONT-001": 1,
+        "CUSHION-001": 1,
+        "CUSHION-PIPING-001": 2,
+    }
+    assert {
+        "SHELF-RAIL-END-001",
+        "EXTENSION-SHELF-RAIL-001",
+        "EXTENSION-SHELF-SLAT-001",
+        "EXTENSION-SHELF-STOPPER-001",
+    }.isdisjoint(parts)
+
+    floor = parts["EXTENSION-STORAGE-FLOOR-001"]
+    back = parts["EXTENSION-STORAGE-BACK-001"]
+    divider = parts["EXTENSION-STORAGE-DIVIDER-001"]
+    front = parts["UMBRELLA-HOLDER-FRONT-001"]
+    deck = parts["SEAT-BASE-001"]
+    deck_bounds = deck.shape.val().BoundingBox()
+    assert deck_bounds.xlen == pytest.approx(spec.length)
+    assert deck.stock_size_mm[0] == pytest.approx(spec.length)
+    assert floor.stock_size_mm == pytest.approx(
+        (
+            spec.extension_length - spec.leg_size,
+            spec.extension_depth - 2 * spec.leg_size,
+            spec.storage_panel_thickness,
+        )
+    )
+    assert back.stock_size_mm[2] == pytest.approx(
+        spec.frame_height
+        - spec.seat_base_thickness
+        - spec.top_rail_height
+        - spec.storage_floor_top_height
+    )
+    assert divider.stock_size_mm[1] == pytest.approx(
+        floor.stock_size_mm[1] - spec.storage_panel_thickness
+    )
+    assert front.stock_size_mm == pytest.approx(
+        (
+            spec.umbrella_compartment_width,
+            spec.storage_panel_thickness,
+            spec.umbrella_front_height,
+        )
+    )
+
+
+def test_umbrella_variant_joinery_matches_its_panel_module() -> None:
+    spec = EntrywayBenchSpec(extension_mode="umbrella_storage")
+    design = build_entryway_bench("umbrella-bench", spec.as_dict())
+
+    assert design.joinery.hardware_quantities() == {
+        "PH-38-T20": 32,
+        "PH-32-T20": 8,
+        "CSK-4X35-T20": 30,
+        "CB-M6X50": 2,
+        "DOWEL-8X40": 4,
+    }
+    operation_parts = {operation.part_number for operation in design.joinery.drill_operations}
+    assert "EXTENSION-STORAGE-BACK-001" in operation_parts
+    assert "EXTENSION-STORAGE-DIVIDER-001" in operation_parts
+    assert "UMBRELLA-HOLDER-FRONT-001" in operation_parts
+    assert "EXTENSION-SHELF-SLAT-001" not in operation_parts
+
+
+def test_umbrella_variant_ignores_unused_shoe_shelf_geometry() -> None:
+    spec = EntrywayBenchSpec(
+        extension_mode="umbrella_storage",
+        extension_slat_count=1,
+        extension_shelf_length=1.0,
+        extension_shelf_angle_deg=90.0,
+    )
+
+    design = build_entryway_bench("umbrella-with-unused-shoe-values", spec.as_dict())
+
+    assert design.total_occurrences() == 33
+
+
+def test_no_extension_variant_is_only_the_four_leg_main_bench() -> None:
+    spec = EntrywayBenchSpec(extension_mode="none")
+    design = build_entryway_bench("bench-without-extension", spec.as_dict())
+    parts = {part.number: part for part in design.parts}
+
+    assert design.overall_size_mm() == pytest.approx(
+        (spec.length, spec.depth, spec.frame_height + spec.cushion_thickness)
+    )
+    assert design.total_occurrences() == 24
+    assert {part.number: part.quantity for part in design.parts} == {
+        "SEAT-BASE-001": 1,
+        "LEG-001": 4,
+        "TOP-RAIL-LONG-001": 2,
+        "TOP-RAIL-END-001": 2,
+        "SHELF-RAIL-001": 2,
+        "SHELF-SLAT-001": spec.shelf_slat_count,
+        "CUSHION-001": 1,
+        "CUSHION-PIPING-001": 2,
+    }
+    assert not any(part_number.startswith("EXTENSION-") for part_number in parts)
+    assert "SHELF-RAIL-END-001" not in parts
+    assert parts["SEAT-BASE-001"].shape.val().BoundingBox().xlen == pytest.approx(spec.length)
+
+
+def test_no_extension_joinery_contains_only_main_bench_hardware() -> None:
+    spec = EntrywayBenchSpec(extension_mode="none")
+    design = build_entryway_bench("bench-without-extension", spec.as_dict())
+
+    assert design.joinery.hardware_quantities() == {
+        "PH-38-T20": 20,
+        "PH-32-T20": 8,
+        "CSK-4X35-T20": 20,
+    }
+    assert len(design.joinery.joints) == 5
+    assert all(
+        "EXTENSION" not in operation.operation_id for operation in design.joinery.drill_operations
+    )
+
+
 def test_extension_can_move_to_right_side() -> None:
     values = EntrywayBenchSpec().as_dict()
     values["extension_side"] = "right"
@@ -252,6 +397,33 @@ def test_example_design_resolves_from_python_defaults() -> None:
     design = load_design(Path("designs/entryway-bench.json"))
 
     assert design.parameters == EntrywayBenchSpec().as_dict()
+    assert (design.family_id, design.variant, design.variant_label) == (
+        "entryway-bench",
+        "shoe-shelf",
+        "Shoe shelf",
+    )
+
+
+def test_umbrella_example_is_a_second_variant_of_the_bench_family() -> None:
+    design = load_design(Path("designs/entryway-bench-umbrella.json"))
+
+    assert design.parameters["extension_mode"] == "umbrella_storage"
+    assert (design.family_id, design.variant, design.variant_label) == (
+        "entryway-bench",
+        "umbrella-storage",
+        "Umbrella storage",
+    )
+
+
+def test_no_extension_example_is_a_third_variant_of_the_bench_family() -> None:
+    design = load_design(Path("designs/entryway-bench-no-extension.json"))
+
+    assert design.parameters["extension_mode"] == "none"
+    assert (design.family_id, design.variant, design.variant_label) == (
+        "entryway-bench",
+        "no-extension",
+        "No extension",
+    )
 
 
 def test_rejects_unknown_parameter() -> None:
@@ -296,6 +468,22 @@ def test_rejects_unknown_extension_side() -> None:
     values["extension_side"] = "middle"
 
     with pytest.raises(ValueError, match="extension_side must be"):
+        EntrywayBenchSpec.from_mapping(values)
+
+
+def test_rejects_unknown_extension_mode() -> None:
+    values = EntrywayBenchSpec().as_dict()
+    values["extension_mode"] = "laundry"
+
+    with pytest.raises(ValueError, match="extension_mode must be"):
+        EntrywayBenchSpec.from_mapping(values)
+
+
+def test_rejects_umbrella_compartment_that_consumes_all_storage() -> None:
+    values = EntrywayBenchSpec(extension_mode="umbrella_storage").as_dict()
+    values["umbrella_compartment_width"] = values["extension_length"]
+
+    with pytest.raises(ValueError, match="leaves no general storage area"):
         EntrywayBenchSpec.from_mapping(values)
 
 

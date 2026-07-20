@@ -7,7 +7,7 @@ can express detailed domain intent while exports and the web studio consume one 
 ## Authoring flow
 
 ```text
-design JSON overrides
+design JSON identity + overrides
         ↓
 frozen specification ── validates user-facing dimensions
         ↓
@@ -27,7 +27,8 @@ The `querycad.furniture` package is the public authoring Interface. Its main con
 - `PartCatalog` and `PartHandle`: an authoring Implementation that lets separate subassemblies add
   occurrences to one stable part definition before it is frozen.
 - `Placement`, `Part`, and `Design`: immutable output records. A `Design` is the aggregate root
-  validated and consumed by every exporter.
+  validated and consumed by every exporter; its family and variant identity travel with every
+  artifact.
 - `JoineryPlan` and `JoinerySchedule`: the authoring and immutable forms of fabrication metadata. The
   plan removes duplicated quantity arithmetic; the schedule owns cross-reference validation.
 - Geometry and layout helpers such as `stock_box`, `soft_box`, `linear_centers`, and
@@ -44,8 +45,8 @@ The entryway bench package is the detailed baseline:
 - `spec.py` owns editable values and impossible-combination checks.
 - `layout.py` owns every derived position and clearance shared by other Modules.
 - `parts.py` owns local solids, stable part numbers, and the main-frame, extension, and upholstery
-  subassemblies. The extension reuses the main `LEG-001` definition through the catalog rather than
-  merging part lists afterward.
+  subassemblies. The shoe-shelf and umbrella-storage variants compose their selected extension onto
+  the same frame and reuse the main `LEG-001` definition through the catalog.
 - `joinery.py` owns hardware assumptions, drill operations, and assembly sequence.
 - `model.py` is a short composition root with no geometry literals.
 
@@ -61,7 +62,9 @@ validation, CLI, and export code consume `Design` and do not know bench-specific
 The browser has the same boundary. Python produces `manifest.json` and `build/catalog.json`; the web
 studio parses those contracts into generic types. Materials UI modules project the manifest into
 inventory summaries, schematics, schedules, and the highlighted assembly without importing model
-source or recognizing individual furniture builds.
+source or recognizing individual furniture builds. Catalog `familyId`, `variantId`, and
+`variantLabel` fields group independently generated builds; selecting a variant replaces the whole
+artifact set rather than patching browser geometry.
 
 ## When to deepen the Interface
 

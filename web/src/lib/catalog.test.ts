@@ -11,6 +11,9 @@ describe('parseCatalog', () => {
           id: 'dining-table',
           name: 'dining-table',
           model: 'apron_table',
+          familyId: 'dining-table',
+          variantId: 'default',
+          variantLabel: 'Default',
           revision: '1234567890abcdef',
           overallSizeMm: { x: 1600, y: 800, z: 750 },
           partOccurrences: 9,
@@ -32,6 +35,30 @@ describe('parseCatalog', () => {
     ).toThrow('Unsupported build catalog')
   })
 
+  it('rejects duplicate family and variant identities', () => {
+    const candidate = {
+      id: 'bench-shoe',
+      name: 'bench-shoe',
+      model: 'entryway_bench',
+      familyId: 'bench',
+      variantId: 'shoe',
+      variantLabel: 'Shoe shelf',
+      revision: '1234567890abcdef',
+      overallSizeMm: { x: 1600, y: 250, z: 550 },
+      partOccurrences: 39,
+      parameters: {},
+      artifacts: { glb: '/bench.glb', manifest: '/bench.json' },
+    }
+
+    expect(() =>
+      parseCatalog({
+        schemaVersion: 1,
+        units: 'mm',
+        designs: [candidate, { ...candidate, id: 'bench-shoe-copy' }],
+      }),
+    ).toThrow('duplicate furniture variants')
+  })
+
   it('rejects a design without a valid occurrence count', () => {
     expect(() =>
       parseCatalog({
@@ -42,6 +69,9 @@ describe('parseCatalog', () => {
             id: 'dining-table',
             name: 'dining-table',
             model: 'apron_table',
+            familyId: 'dining-table',
+            variantId: 'default',
+            variantLabel: 'Default',
             revision: '1234567890abcdef',
             overallSizeMm: { x: 1600, y: 800, z: 750 },
             parameters: {},

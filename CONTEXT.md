@@ -10,10 +10,18 @@ fabrication metadata; generated files are disposable projections for CAD tools a
 A registered kind of furniture with one parameter schema and one build function. Examples are the
 entryway bench and apron table.
 
+### Furniture variant
+
+One independently buildable design within a furniture family. Variants share the registered model
+and parameter schema but may select different modular subassemblies. The manifest records `family`,
+`variant`, and `variant_label`; the catalog exposes their camel-case equivalents so the studio can
+switch the complete GLB, BOM, joinery, and materials document together.
+
 ### Design specification
 
 The frozen, user-facing parameter object for a furniture family. It owns defaults, input mapping,
-and actionable validation of impossible combinations. JSON values are optional variant overrides.
+and actionable validation of impossible combinations. JSON values select one reproducible variant
+without becoming a second source of geometry.
 
 ### Derived layout
 
