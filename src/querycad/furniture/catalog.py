@@ -7,6 +7,7 @@ from collections.abc import Iterable
 import cadquery as cq
 
 from querycad.furniture.design import Color4, Part, Placement, Vector3
+from querycad.furniture.geometry import stock_box
 
 
 class PartHandle:
@@ -89,6 +90,27 @@ class PartCatalog:
         )
         self._handles[number] = handle
         return handle
+
+    def define_stock(
+        self,
+        *,
+        number: str,
+        description: str,
+        material: str,
+        size_mm: Vector3,
+        color: Color4 = (0.72, 0.52, 0.30, 1.0),
+        corner_radius: float = 0.0,
+    ) -> PartHandle:
+        """Define rectangular cut stock once, including its matching nominal envelope."""
+
+        return self.define(
+            number=number,
+            description=description,
+            material=material,
+            shape=stock_box(*size_mm, corner_radius=corner_radius),
+            stock_size_mm=size_mm,
+            color=color,
+        )
 
     def part(self, number: str) -> PartHandle:
         try:

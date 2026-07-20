@@ -11,6 +11,7 @@ import {
   type Texture,
 } from 'three'
 import type { CatalogDesign } from '../types'
+import { hasNamedAncestor, meshMaterials } from './furnitureAsset'
 
 export const DARK_WOOD_BOOKSHELF_MODEL = 'built_in_bookshelf'
 
@@ -84,19 +85,6 @@ export function addBoxProjectionUvs(
   geometry.setAttribute('uv', new BufferAttribute(uv, 2))
 }
 
-function hasKnobAncestor(object: Object3D, scene: Object3D) {
-  let current: Object3D | null = object
-  while (current && current !== scene) {
-    if (/^knob(?:_|$)/i.test(current.name)) return true
-    current = current.parent
-  }
-  return false
-}
-
-function materialsOf(mesh: Mesh) {
-  return Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-}
-
 function materialLightness(material: Material) {
   if (!(material instanceof MeshStandardMaterial)) return 1
   return material.color.getHSL({ h: 0, s: 0, l: 0 }).l
@@ -131,8 +119,12 @@ export function copyFurnitureScene(
 
   if (woodTextures) {
     scene.traverse((object) => {
-      if (!(object instanceof Mesh) || hasKnobAncestor(object, scene)) return
-      for (const material of materialsOf(object)) woodMaterials.add(material)
+      if (
+        !(object instanceof Mesh) ||
+        hasNamedAncestor(object, scene, (name) => /^knob(?:_|$)/i.test(name))
+      )
+        return
+      for (const material of meshMaterials(object)) woodMaterials.add(material)
     })
   }
 
@@ -144,7 +136,9 @@ export function copyFurnitureScene(
 
   scene.traverse((object) => {
     if (!(object instanceof Mesh)) return
-    const isWood = Boolean(woodTextures) && !hasKnobAncestor(object, scene)
+    const isWood =
+      Boolean(woodTextures) &&
+      !hasNamedAncestor(object, scene, (name) => /^knob(?:_|$)/i.test(name))
 
     if (isWood) {
       const sourceGeometry = object.geometry

@@ -1,0 +1,323 @@
+.mw-workbench > .assembly-preview {
+  top: 12px;
+}
+
+.mw-workbench .assembly-preview-heading {
+  height: 64px;
+}
+
+.mw-workbench .assembly-preview-heading h3 {
+  font-size: 17px;
+}
+
+.mw-workbench .assembly-preview-canvas {
+  height: min(500px, calc(100svh - 245px));
+  min-height: 360px;
+}
+
+.assembly-preview-navigation {
+  padding: 12px 14px 14px;
+  border-top: 1px solid #2b353e;
+  background: #0d1419;
+}
+
+.assembly-preview-navigation > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.assembly-preview-navigation button {
+  width: 30px;
+  height: 28px;
+  border: 1px solid #3a4752;
+  border-radius: 7px;
+  background: #182129;
+  color: #dce4e8;
+  cursor: pointer;
+}
+
+.assembly-preview-navigation button:disabled {
+  opacity: 0.34;
+  cursor: default;
+}
+
+.assembly-preview-navigation span {
+  color: #8e9ba5;
+  font: 700 11px/1 var(--mono);
+}
+
+.assembly-progress-bars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12px, 1fr));
+  gap: 4px;
+  margin-top: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.assembly-progress-bars li {
+  height: 4px;
+  border-radius: 999px;
+  background: #303a42;
+}
+
+.assembly-progress-bars li.is-current {
+  background: #ff9f68;
+}
+
+.assembly-progress-bars li.is-complete {
+  background: #69d49a;
+}
+
+/* Light application chrome around the paper schematics. */
+.materials-page {
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 15% 0%, #ffffffa6, transparent 34%),
+    radial-gradient(circle at 86% 8%, #ef824b14, transparent 31%), var(--canvas);
+}
+
+.build-select {
+  color: var(--muted);
+}
+
+.build-select select {
+  border-color: var(--line);
+  background: var(--surface-raised);
+  color: var(--ink-strong);
+}
+
+.materials-message {
+  border-color: var(--line-strong);
+  color: var(--muted);
+  background: #f7f5eebd;
+}
+
+.materials-message.is-loading::before {
+  border-color: #c8c5bb;
+  border-top-color: var(--accent);
+}
+
+.materials-message.is-error {
+  border-color: #c68e7f;
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.materials-message button {
+  border-color: #d5a087;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.assembly-preview {
+  border-color: #bcb9af;
+  background: var(--surface);
+  box-shadow: 0 20px 46px #4b45361f;
+}
+
+.assembly-preview-heading {
+  border-color: var(--line);
+  background: linear-gradient(110deg, #fffdf8, #f1eee6);
+}
+
+.assembly-preview-heading h3 {
+  color: var(--ink-strong);
+}
+
+.preview-live-dot {
+  color: var(--muted);
+}
+
+.preview-live-dot::before {
+  background: #4d9a6d;
+  box-shadow: 0 0 0 3px #4d9a6d20;
+}
+
+.assembly-preview-hint {
+  border-color: #bcb9af;
+  background: #fffdf8e8;
+  box-shadow: 0 8px 24px #4b453625;
+}
+
+.assembly-preview-hint span {
+  color: var(--accent-ink);
+}
+
+.assembly-preview-hint strong {
+  color: var(--ink-strong);
+}
+
+.assembly-preview-hint small {
+  color: var(--muted);
+}
+
+.assembly-preview-footer,
+.assembly-preview-navigation {
+  border-color: var(--line);
+  color: var(--muted);
+  background: #f3f0e8;
+}
+
+.assembly-preview-navigation button {
+  border-color: #bbb8ae;
+  background: var(--surface-raised);
+  color: var(--ink);
+}
+
+.assembly-preview-navigation button:hover:not(:disabled) {
+  border-color: #d0835c;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.assembly-preview-navigation span {
+  color: var(--muted);
+}
+
+.assembly-progress-bars li {
+  background: #d5d1c7;
+}
+
+.assembly-progress-bars li.is-current {
+  background: var(--accent);
+}
+
+.assembly-progress-bars li.is-complete {
+  background: #55936c;
+}
+
+.part-detail-backdrop {
+  background: #d8d5cce8;
+}
+
+.part-detail-modal {
+  border-color: #aaa9a1;
+  background: #f4f1e9;
+  color: var(--ink);
+  box-shadow: 0 30px 90px #4842354a;
+}
+
+.part-detail-header {
+  border-color: var(--line);
+  background: #fbfaf5ed;
+}
+
+.part-detail-header .eyebrow,
+.part-detail-header > div > p:last-child {
+  color: var(--muted);
+}
+
+.part-detail-header > div > span {
+  color: var(--accent-ink);
+}
+
+.part-detail-header h2 {
+  color: var(--ink-strong);
+}
+
+.part-detail-header button {
+  border-color: #bbb8ae;
+  background: var(--surface-raised);
+  color: var(--ink);
+}
+
+.part-detail-header button:hover,
+.part-detail-header button:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.part-detail-header button b {
+  background: #ef824b;
+  color: #2a170e;
+}
+
+.part-detail-point-callout rect {
+  fill: #fffdf8f5;
+  stroke: #d75f2b;
+  filter: drop-shadow(0 5px 8px #4b45362e);
+}
+
+.part-detail-point-callout text {
+  fill: #283033;
+}
+
+.part-detail-point-callout .part-detail-point-callout-title {
+  fill: #a43c16;
+}
+
+.part-detail-footer {
+  border-color: #d3a087;
+  background: #fff2e6;
+  color: #684e42;
+}
+
+.mw-hero h2 {
+  color: var(--ink-strong);
+}
+
+.mw-summary-chips {
+  color: var(--muted);
+}
+
+.mw-summary-chips > span,
+.mw-material-rollup article {
+  border-color: #c9c6bc;
+  background: #f7f5ee;
+}
+
+.mw-summary-chips b,
+.mw-material-rollup strong {
+  color: #303739;
+}
+
+.mw-summary-chips .is-accent b {
+  color: var(--accent-ink);
+}
+
+.mw-material-rollup i {
+  border-color: #7a756a3d;
+}
+
+.mw-material-rollup small {
+  color: var(--muted);
+}
+
+.mw-tabs {
+  background: linear-gradient(var(--canvas) 78%, transparent);
+}
+
+.mw-tabs button {
+  border-color: #c5c2b8;
+  background: #f5f2ea;
+  color: #646c6e;
+}
+
+.mw-tabs button:hover,
+.mw-tabs button:focus-visible {
+  border-color: #d0835c;
+  background: #fffaf3;
+  color: var(--accent-ink);
+}
+
+.mw-tabs button.is-active {
+  border-color: #d0835c;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  box-shadow: inset 0 0 0 1px #d75f2b21;
+}
+
+.mw-tabs button span {
+  background: #4c443414;
+}
+
+.mw-paper-panel {
+  border-color: #b9b6ac;
+  box-shadow:
+    0 18px 44px #4b45361c,
+    inset 0 0 0 1px #ffffffc9;
+}

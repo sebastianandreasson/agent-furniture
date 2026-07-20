@@ -52,6 +52,25 @@ def test_part_catalog_rejects_duplicate_definitions() -> None:
         catalog.define(**definition)
 
 
+def test_part_catalog_defines_rectangular_stock_with_matching_envelope() -> None:
+    part = (
+        PartCatalog()
+        .define_stock(
+            number="SHELF-001",
+            description="Rounded shelf",
+            material="oak",
+            size_mm=(600, 200, 18),
+            corner_radius=4,
+        )
+        .place("shelf", (0, 0, 400))
+        .freeze()
+    )
+
+    bounds = part.shape.val().BoundingBox()
+    assert part.stock_size_mm == (600, 200, 18)
+    assert (bounds.xlen, bounds.ylen, bounds.zlen) == pytest.approx(part.stock_size_mm)
+
+
 def test_joinery_plan_derives_hardware_from_drill_points_and_occurrences() -> None:
     catalog = PartCatalog()
     source = catalog.define(

@@ -1,4 +1,4 @@
-import { Bounds, Html, OrbitControls, useGLTF } from '@react-three/drei'
+import { Bounds, Html, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Suspense, useEffect, useMemo } from 'react'
 import { Color, Mesh, type Material, type Object3D } from 'three'
@@ -10,6 +10,11 @@ import {
   usesDarkWoodTexture,
   type WoodTextureSet,
 } from '../scene/furnitureAppearance'
+import {
+  hasNamedAncestor,
+  meshMaterials,
+  useFurnitureAsset,
+} from '../scene/furnitureAsset'
 import { useEditorStore } from '../state/editor'
 import type { CatalogDesign, ManifestPart } from '../types'
 import type { PreviewContext } from './materialsViewModel'
@@ -29,21 +34,11 @@ type MaterialSnapshot = {
   depthWrite: boolean
 }
 
-function meshMaterials(mesh: Mesh) {
-  return Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-}
-
-function belongsToPart(
-  object: Object3D,
-  scene: Object3D,
-  placementNames: Set<string>,
-) {
-  let current: Object3D | null = object
-  while (current && current !== scene) {
-    if (placementNames.has(current.name)) return true
-    current = current.parent
-  }
-  return false
+export type AssemblyNavigation = {
+  currentPosition: number
+  steps: Array<{ number: number; complete: boolean }>
+  onPrevious: () => void
+  onNext: () => void
 }
 
 function PreparedAssemblyModel({
@@ -80,7 +75,8 @@ function PreparedAssemblyModel({
     const filtering = names.size > 0
     scene.traverse((object) => {
       if (!(object instanceof Mesh)) return
-      const selected = !filtering || belongsToPart(object, scene, names)
+      const selected =
+        !filtering || hasNamedAncestor(object, scene, (name) => names.has(name))
       for (const material of meshMaterials(object)) {
         const original = snapshots.get(material)
         if (!original) continue
@@ -147,10 +143,8 @@ function AssemblyModel({
   design: CatalogDesign
   selectedParts: ManifestPart[]
 }) {
-  const source = `${design.artifacts.glb}?revision=${design.revision}`
-  const { scene: sourceScene } = useGLTF(source)
+  const sourceScene = useFurnitureAsset(design)
   const showTextures = useEditorStore((state) => state.showTextures)
-  useEffect(() => () => useGLTF.clear(source), [source])
 
   if (showTextures && usesDarkWoodTexture(design)) {
     return (
@@ -177,12 +171,7 @@ export function AssemblyPreview({
   design: CatalogDesign
   selectedParts: ManifestPart[]
   context?: PreviewContext
-  navigation?: {
-    currentPosition: number
-    steps: Array<{ number: number; complete: boolean }>
-    onPrevious: () => void
-    onNext: () => void
-  }
+  navigation?: AssemblyNavigation
 }) {
   return (
     <aside

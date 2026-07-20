@@ -1,0 +1,263 @@
+@media (max-width: 1250px) {
+  .mw-workbench {
+    grid-template-columns: minmax(0, 1.45fr) minmax(310px, 0.55fr);
+  }
+
+  .mw-material-rollup article {
+    min-width: 180px;
+  }
+
+  .mw-cut-header,
+  .mw-cut-row {
+    grid-template-columns:
+      minmax(190px, 1.5fr) minmax(130px, 1fr) 58px minmax(110px, 0.8fr)
+      82px;
+  }
+}
+
+@media (max-width: 1050px) {
+  .mw-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .mw-workbench > .assembly-preview {
+    position: relative;
+    top: auto;
+    grid-row: 1;
+  }
+
+  .mw-workbench .assembly-preview-canvas {
+    height: 460px;
+  }
+
+  .mw-document-column {
+    grid-row: 2;
+  }
+}
+
+@media (max-width: 760px) {
+  .materials-inner {
+    padding: 26px 16px 46px;
+  }
+
+  .build-select {
+    min-width: 0;
+  }
+
+  .mw-inner {
+    padding-top: 24px;
+  }
+
+  .mw-hero,
+  .mw-hero-tools,
+  .mw-material-rollup {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mw-material-rollup article,
+  .mw-build-select,
+  .materials-variant-select {
+    width: 100%;
+  }
+
+  .mw-design-picker {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .mw-tabs {
+    overflow-x: auto;
+  }
+
+  .mw-tabs button {
+    min-width: 155px;
+  }
+
+  .mw-paper-panel {
+    padding: 16px;
+  }
+
+  .mw-panel-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mw-step-card {
+    grid-template-columns: 1fr;
+  }
+
+  .mw-step-done {
+    margin: 0 14px 13px 74px;
+  }
+
+  .mw-parts-actions {
+    justify-content: start;
+  }
+
+  .mw-parts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .schematic-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mw-cut-list {
+    overflow-x: auto;
+  }
+
+  .mw-cut-header,
+  .mw-cut-row {
+    min-width: 800px;
+  }
+
+  .mw-shopping-list article {
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .mw-hardware-quantity strong {
+    font-size: 28px;
+  }
+
+  .mw-drill-key {
+    grid-template-columns: 1fr;
+  }
+
+  .mw-joinery-caveat {
+    grid-template-columns: 1fr;
+  }
+
+  .assembly-preview-canvas {
+    height: 430px;
+    min-height: 360px;
+  }
+
+  .part-detail-backdrop {
+    padding: 0;
+  }
+
+  .part-detail-modal {
+    min-height: 100svh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .part-detail-header {
+    align-items: start;
+    padding: 18px;
+  }
+
+  .part-detail-header button span {
+    display: none;
+  }
+
+  .part-detail-content {
+    padding: 12px;
+  }
+
+  .part-detail-connection-key {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .part-detail-face {
+    overflow-x: auto;
+    padding: 16px;
+  }
+
+  .part-detail-face-heading,
+  .part-detail-operation-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .part-detail-drawing {
+    min-width: 700px;
+  }
+
+  .part-detail-footer {
+    margin: 0 12px 12px;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  :root {
+    color: #111;
+    background: #fff;
+  }
+
+  .app-header,
+  .materials-message,
+  .mw-hero,
+  .mw-tabs,
+  .mw-workbench > .assembly-preview,
+  .mw-assembly-guide,
+  .mw-hardware-panel,
+  .mw-parts-actions {
+    display: none !important;
+  }
+
+  .app-shell,
+  .materials-page {
+    height: auto;
+    overflow: visible;
+    background: #fff;
+    color: #111;
+  }
+
+  .materials-inner {
+    width: 100%;
+    padding: 0;
+  }
+
+  .mw-workbench,
+  .mw-document-column {
+    display: block;
+    margin: 0;
+  }
+
+  .mw-paper-panel,
+  .mw-parts-panel {
+    display: block !important;
+    padding: 0;
+    border: 0;
+    background: #fff;
+    box-shadow: none;
+  }
+
+  .mw-parts-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .schematic-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    background: transparent;
+    print-color-adjust: exact;
+  }
+
+  .schematic-piece {
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+    box-shadow: none;
+    transform: none;
+    print-color-adjust: exact;
+  }
+
+  .drill-operation {
+    print-color-adjust: exact;
+  }
+
+  .part-detail-backdrop {
+    display: none !important;
+  }
+}

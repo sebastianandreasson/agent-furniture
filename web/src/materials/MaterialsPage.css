@@ -1,0 +1,86 @@
+.materials-page {
+  height: calc(100svh - 71px);
+  overflow: auto;
+  font-size: 15px;
+  background:
+    radial-gradient(circle at 18% 0%, #27302755, transparent 33%),
+    radial-gradient(circle at 83% 12%, #422a1f38, transparent 30%), #0c1116;
+}
+
+.materials-page .eyebrow {
+  font-size: 11px;
+}
+
+.materials-inner {
+  width: 100%;
+  margin: 0 auto;
+  padding: 42px clamp(18px, 2.2vw, 42px) 64px;
+}
+
+.build-select {
+  min-width: 230px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #7f8d98;
+  font: 700 11px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.build-select select {
+  width: 100%;
+  padding: 10px 34px 10px 11px;
+  border: 1px solid #394650;
+  border-radius: 8px;
+  background: #11181e;
+  color: #e4eaf0;
+  font: 600 14px/1 var(--sans);
+  text-transform: none;
+}
+
+.materials-message {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 28px;
+  border: 1px dashed #34404a;
+  border-radius: 12px;
+  color: #8d9aa4;
+  background: #11171db8;
+  font-size: 15px;
+}
+
+.materials-message.is-loading::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border: 2px solid #3b4650;
+  border-top-color: #ff9f68;
+  border-radius: 50%;
+  animation: material-spin 800ms linear infinite;
+}
+
+.materials-message.is-error {
+  border-style: solid;
+  border-color: #6a3c31;
+  color: #ffc3a6;
+  background: #321f1bd6;
+}
+
+.materials-message button {
+  padding: 7px 10px;
+  border: 1px solid #754638;
+  border-radius: 6px;
+  background: #42271f;
+  color: #ffd0ba;
+  cursor: pointer;
+}
+
+@keyframes material-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

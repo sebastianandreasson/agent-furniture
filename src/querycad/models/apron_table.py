@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
-from querycad.furniture import Design, FurnitureSpec, PartCatalog, stock_box
+from querycad.furniture import Design, FurnitureSpec, PartCatalog
 
 
 @dataclass(frozen=True)
@@ -58,49 +58,41 @@ def build_apron_table(name: str, parameters: dict[str, Any]) -> Design:
     end_apron_x = leg_x - spec.leg_size / 2 - spec.apron_thickness / 2
 
     catalog = PartCatalog()
-    catalog.define(
+    catalog.define_stock(
         number="TOP-001",
         description="Table top",
         material=spec.top_material,
-        shape=stock_box(
-            spec.length,
-            spec.depth,
-            spec.top_thickness,
-            corner_radius=spec.top_corner_radius,
-        ),
-        stock_size_mm=(spec.length, spec.depth, spec.top_thickness),
+        size_mm=(spec.length, spec.depth, spec.top_thickness),
+        corner_radius=spec.top_corner_radius,
         color=(0.72, 0.45, 0.22, 1.0),
     ).place("table_top", (0.0, 0.0, leg_height))
 
-    legs = catalog.define(
+    legs = catalog.define_stock(
         number="LEG-001",
         description="Square table leg",
         material=spec.frame_material,
-        shape=stock_box(spec.leg_size, spec.leg_size, leg_height),
-        stock_size_mm=(spec.leg_size, spec.leg_size, leg_height),
+        size_mm=(spec.leg_size, spec.leg_size, leg_height),
         color=(0.64, 0.43, 0.24, 1.0),
     )
     for x_name, x in (("left", -leg_x), ("right", leg_x)):
         for y_name, y in (("front", -leg_y), ("back", leg_y)):
             legs.place(f"leg_{x_name}_{y_name}", (x, y, 0.0))
 
-    long_apron = catalog.define(
+    long_apron = catalog.define_stock(
         number="APRON-LONG-001",
         description="Long apron",
         material=spec.frame_material,
-        shape=stock_box(long_apron_length, spec.apron_thickness, spec.apron_height),
-        stock_size_mm=(long_apron_length, spec.apron_thickness, spec.apron_height),
+        size_mm=(long_apron_length, spec.apron_thickness, spec.apron_height),
         color=(0.61, 0.40, 0.22, 1.0),
     )
     long_apron.place("apron_long_front", (0.0, -long_apron_y, apron_z))
     long_apron.place("apron_long_back", (0.0, long_apron_y, apron_z))
 
-    end_apron = catalog.define(
+    end_apron = catalog.define_stock(
         number="APRON-END-001",
         description="End apron",
         material=spec.frame_material,
-        shape=stock_box(spec.apron_thickness, end_apron_length, spec.apron_height),
-        stock_size_mm=(spec.apron_thickness, end_apron_length, spec.apron_height),
+        size_mm=(spec.apron_thickness, end_apron_length, spec.apron_height),
         color=(0.61, 0.40, 0.22, 1.0),
     )
     end_apron.place("apron_end_left", (-end_apron_x, 0.0, apron_z))

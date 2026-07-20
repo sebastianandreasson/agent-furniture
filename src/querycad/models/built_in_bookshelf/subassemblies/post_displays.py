@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from querycad.furniture import PartCatalog, stock_box
+from querycad.furniture import PartCatalog
 from querycad.models.built_in_bookshelf.layout import BuiltInLayout
 from querycad.models.built_in_bookshelf.spec import BuiltInBookshelfSpec
 from querycad.models.built_in_bookshelf.subassemblies.materials import DARK_OAK
@@ -29,16 +29,11 @@ def add_post_displays(
     """Clad the upper posts and bridge shelf lines with tiny display ledges."""
 
     for post in layout.posts:
-        catalog.define(
+        catalog.define_stock(
             number=POST_CLADDINGS[post.name],
             description=f"Upper oak face cladding over the {post.name} structural post",
             material=spec.finish_material,
-            shape=stock_box(
-                post.width,
-                spec.post_trim_thickness,
-                layout.post_cladding_height,
-            ),
-            stock_size_mm=(
+            size_mm=(
                 post.width,
                 spec.post_trim_thickness,
                 layout.post_cladding_height,
@@ -52,32 +47,22 @@ def add_post_displays(
                 layout.post_cladding_bottom_z,
             ),
         )
-        ledges = catalog.define(
+        ledges = catalog.define_stock(
             number=POST_DISPLAY_LEDGES[post.name],
             description=f"Slim {post.name}-post display ledge for a front-facing book",
             material=spec.finish_material,
-            shape=stock_box(
-                post.width,
-                spec.display_ledge_depth,
-                spec.display_ledge_thickness,
-            ),
-            stock_size_mm=(
+            size_mm=(
                 post.width,
                 spec.display_ledge_depth,
                 spec.display_ledge_thickness,
             ),
             color=DARK_OAK,
         )
-        lips = catalog.define(
+        lips = catalog.define_stock(
             number=POST_DISPLAY_LIPS[post.name],
             description=f"Low retaining lip on a {post.name}-post display ledge",
             material=spec.finish_material,
-            shape=stock_box(
-                post.width,
-                spec.display_lip_thickness,
-                spec.display_lip_height,
-            ),
-            stock_size_mm=(
+            size_mm=(
                 post.width,
                 spec.display_lip_thickness,
                 spec.display_lip_height,

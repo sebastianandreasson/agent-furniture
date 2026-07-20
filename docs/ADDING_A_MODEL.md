@@ -16,7 +16,8 @@ general behavior to that Interface instead.
    actionable validation there. Keep all units in millimetres.
 2. Create an immutable derived layout when several subassemblies need the same calculated positions,
    lengths, signs, or clearances. Layout code calculates design intent but does not create solids.
-3. Define local-coordinate solids in a `PartCatalog`. Give every unique cut or purchased part a
+3. Define local-coordinate solids in a `PartCatalog`. Use `define_stock` for rectangular boards and
+   `define` for genuinely machined or composite shapes. Give every unique cut or purchased part a
    stable part number, then add named `Placement` occurrences from each subassembly.
 4. When fabrication metadata is in scope, build a `JoineryPlan`. Attach each drill operation to a
    stable source part and let the plan derive screw quantities from drill points × part occurrences.
@@ -33,8 +34,11 @@ models/my_family/
 ├── __init__.py   # narrow public exports
 ├── spec.py       # frozen user-facing inputs and validation
 ├── layout.py     # geometry-free derived dimensions and positions
-├── parts.py      # part definitions and subassembly occurrence builders
-├── joinery.py    # hardware, drilling, and assembly schedule
+├── part_numbers.py # stable output identifiers for a large family
+├── parts.py      # concise composition of subassembly builders
+├── subassemblies/ # focused local solids and occurrence builders
+├── joinery.py    # concise composition of joinery operations
+├── joinery_operations/ # focused drilling and connection schedules
 └── model.py      # concise orchestration into a Design
 ```
 

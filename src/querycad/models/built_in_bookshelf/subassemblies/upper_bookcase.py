@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from querycad.furniture import PartCatalog, stock_box
+from querycad.furniture import PartCatalog
 from querycad.models.built_in_bookshelf.layout import BuiltInLayout
 from querycad.models.built_in_bookshelf.spec import BuiltInBookshelfSpec
 from querycad.models.built_in_bookshelf.subassemblies.materials import DARK_OAK
@@ -25,12 +25,11 @@ def add_upper_bookcase(
     """Add shelf courses and the offset vertical segments between them."""
 
     for bay in layout.bays:
-        shelves = catalog.define(
+        shelves = catalog.define_stock(
             number=SHELVES[bay.name],
             description=f"Full-width shelf for the {bay.name} opening",
             material=spec.finish_material,
-            shape=stock_box(bay.fitted_width, spec.shelf_depth, spec.shelf_thickness),
-            stock_size_mm=(bay.fitted_width, spec.shelf_depth, spec.shelf_thickness),
+            size_mm=(bay.fitted_width, spec.shelf_depth, spec.shelf_thickness),
             color=DARK_OAK,
         )
         for index, bottom_z in enumerate(layout.shelf_bottoms, start=1):
@@ -57,12 +56,11 @@ def add_upper_bookcase(
         ),
     }
     divider_handles = {
-        key: catalog.define(
+        key: catalog.define_stock(
             number=number,
             description=description,
             material=spec.finish_material,
-            shape=stock_box(spec.divider_thickness, spec.shelf_depth, height),
-            stock_size_mm=(spec.divider_thickness, spec.shelf_depth, height),
+            size_mm=(spec.divider_thickness, spec.shelf_depth, height),
             color=DARK_OAK,
         )
         for key, (number, description, height) in divider_types.items()

@@ -11,20 +11,13 @@ import type {
   ManifestPart,
   Vector3Tuple,
 } from '../types'
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
-function isFiniteNumber(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value)
-}
+import { expectFields, field, isRecord } from './contract'
 
 function parseColor(value: unknown): ColorTuple {
   if (
     !Array.isArray(value) ||
     value.length !== 4 ||
-    !value.every(isFiniteNumber)
+    !value.every(field.finite)
   ) {
     throw new Error('A manifest part has an invalid CAD color.')
   }
@@ -35,7 +28,7 @@ function parseVector(value: unknown, message: string): Vector3Tuple {
   if (
     !Array.isArray(value) ||
     value.length !== 3 ||
-    !value.every(isFiniteNumber)
+    !value.every(field.finite)
   ) {
     throw new Error(message)
   }
@@ -44,7 +37,7 @@ function parseVector(value: unknown, message: string): Vector3Tuple {
 
 function nullableNumber(value: unknown, message: string): number | null {
   if (value === null || value === undefined) return null
-  if (!isFiniteNumber(value)) throw new Error(message)
+  if (!field.finite(value)) throw new Error(message)
   return value
 }
 
@@ -56,142 +49,154 @@ function identityString(value: unknown, fallback: string) {
   return value
 }
 
-function parsePart(value: unknown): ManifestPart {
-  if (
-    !isRecord(value) ||
-    typeof value.part_number !== 'string' ||
-    typeof value.description !== 'string' ||
-    typeof value.material !== 'string' ||
-    !isFiniteNumber(value.quantity) ||
-    !Number.isInteger(value.quantity) ||
-    value.quantity < 1 ||
-    !isFiniteNumber(value.size_x_mm) ||
-    !isFiniteNumber(value.size_y_mm) ||
-    !isFiniteNumber(value.size_z_mm) ||
-    !isFiniteNumber(value.unit_volume_mm3) ||
-    !Array.isArray(value.placements) ||
-    !value.placements.every(
-      (placement) => isRecord(placement) && typeof placement.name === 'string',
-    )
-  ) {
-    throw new Error('The build manifest contains an invalid part entry.')
-  }
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === 'string'
+}
 
-  const placementNames = value.placements.map((placement) =>
+function isGeometryMode(
+  value: unknown,
+): value is ManifestDrillOperation['geometryMode'] {
+  return value === 'cut' || value === 'marked_only'
+}
+
+function isViewAxes(value: unknown): value is [AxisName, AxisName] {
+  const axes = new Set<AxisName>(['x', 'y', 'z'])
+  return (
+    Array.isArray(value) &&
+    value.length === 2 &&
+    value.every(
+      (axis) => typeof axis === 'string' && axes.has(axis as AxisName),
+    ) &&
+    value[0] !== value[1]
+  )
+}
+
+function parsePart(value: unknown): ManifestPart {
+  const part = expectFields(
+    value,
+    {
+      part_number: field.string,
+      description: field.string,
+      material: field.string,
+      quantity: field.positiveInteger,
+      size_x_mm: field.finite,
+      size_y_mm: field.finite,
+      size_z_mm: field.finite,
+      unit_volume_mm3: field.finite,
+      placements: field.array,
+    },
+    'The build manifest contains an invalid part entry.',
+  )
+  if (
+    !part.placements.every(
+      (placement) => isRecord(placement) && field.string(placement.name),
+    )
+  )
+    throw new Error('The build manifest contains an invalid part entry.')
+
+  const placementNames = part.placements.map((placement) =>
     String((placement as Record<string, unknown>).name),
   )
   if (
-    placementNames.length !== value.quantity ||
+    placementNames.length !== part.quantity ||
     new Set(placementNames).size !== placementNames.length
   ) {
     throw new Error('A manifest part has an invalid placement inventory.')
   }
 
   return {
-    partNumber: value.part_number,
-    description: value.description,
-    material: value.material,
-    quantity: value.quantity,
-    sizeMm: [value.size_x_mm, value.size_y_mm, value.size_z_mm] as Vector3Tuple,
-    unitVolumeMm3: value.unit_volume_mm3,
-    colorRgba: parseColor(value.color_rgba),
+    partNumber: part.part_number,
+    description: part.description,
+    material: part.material,
+    quantity: part.quantity,
+    sizeMm: [part.size_x_mm, part.size_y_mm, part.size_z_mm],
+    unitVolumeMm3: part.unit_volume_mm3,
+    colorRgba: parseColor(part.color_rgba),
     placementNames,
   }
 }
 
 function parseFastener(value: unknown): ManifestFastener {
-  if (
-    !isRecord(value) ||
-    typeof value.code !== 'string' ||
-    typeof value.description !== 'string' ||
-    !isFiniteNumber(value.quantity) ||
-    !Number.isInteger(value.quantity) ||
-    value.quantity < 0 ||
-    !isFiniteNumber(value.length_mm) ||
-    value.length_mm <= 0 ||
-    typeof value.nominal_size !== 'string' ||
-    typeof value.head !== 'string' ||
-    typeof value.drive !== 'string' ||
-    typeof value.thread !== 'string' ||
-    typeof value.finish !== 'string' ||
-    typeof value.application !== 'string' ||
-    typeof value.manufacturer !== 'string' ||
-    typeof value.product_code !== 'string' ||
-    typeof value.source_url !== 'string' ||
-    typeof value.status !== 'string' ||
-    typeof value.notes !== 'string'
-  ) {
-    throw new Error('The build manifest contains an invalid fastener entry.')
-  }
+  const fastener = expectFields(
+    value,
+    {
+      code: field.string,
+      description: field.string,
+      quantity: field.nonnegativeInteger,
+      length_mm: field.positive,
+      nominal_size: field.string,
+      head: field.string,
+      drive: field.string,
+      thread: field.string,
+      finish: field.string,
+      application: field.string,
+      manufacturer: field.string,
+      product_code: field.string,
+      source_url: field.string,
+      status: field.string,
+      notes: field.string,
+    },
+    'The build manifest contains an invalid fastener entry.',
+  )
   return {
-    code: value.code,
-    description: value.description,
-    quantity: value.quantity,
-    lengthMm: value.length_mm,
-    nominalSize: value.nominal_size,
-    head: value.head,
-    drive: value.drive,
-    thread: value.thread,
-    finish: value.finish,
-    application: value.application,
-    manufacturer: value.manufacturer,
-    productCode: value.product_code,
-    sourceUrl: value.source_url,
-    status: value.status,
-    notes: value.notes,
+    code: fastener.code,
+    description: fastener.description,
+    quantity: fastener.quantity,
+    lengthMm: fastener.length_mm,
+    nominalSize: fastener.nominal_size,
+    head: fastener.head,
+    drive: fastener.drive,
+    thread: fastener.thread,
+    finish: fastener.finish,
+    application: fastener.application,
+    manufacturer: fastener.manufacturer,
+    productCode: fastener.product_code,
+    sourceUrl: fastener.source_url,
+    status: fastener.status,
+    notes: fastener.notes,
   }
 }
 
 function parseExternalTarget(value: unknown): ManifestExternalTarget {
-  if (
-    !isRecord(value) ||
-    typeof value.code !== 'string' ||
-    !value.code.trim() ||
-    typeof value.description !== 'string' ||
-    !value.description.trim() ||
-    typeof value.notes !== 'string'
-  ) {
-    throw new Error('The build manifest contains an invalid external target.')
-  }
+  const target = expectFields(
+    value,
+    {
+      code: field.nonEmptyString,
+      description: field.nonEmptyString,
+      notes: field.string,
+    },
+    'The build manifest contains an invalid external target.',
+  )
   return {
-    code: value.code,
-    description: value.description,
-    notes: value.notes,
+    code: target.code,
+    description: target.description,
+    notes: target.notes,
   }
 }
 
 function parseDrillOperation(value: unknown): ManifestDrillOperation {
-  const axes = new Set<AxisName>(['x', 'y', 'z'])
-  if (
-    !isRecord(value) ||
-    typeof value.operation_id !== 'string' ||
-    typeof value.part_number !== 'string' ||
-    typeof value.label !== 'string' ||
-    typeof value.kind !== 'string' ||
-    typeof value.face !== 'string' ||
-    !Array.isArray(value.view_axes) ||
-    value.view_axes.length !== 2 ||
-    !value.view_axes.every(
-      (axis) => typeof axis === 'string' && axes.has(axis as AxisName),
-    ) ||
-    value.view_axes[0] === value.view_axes[1] ||
-    !isFiniteNumber(value.diameter_mm) ||
-    value.diameter_mm <= 0 ||
-    typeof value.counts_fastener !== 'boolean' ||
-    (value.geometry_mode !== 'cut' && value.geometry_mode !== 'marked_only') ||
-    !isFiniteNumber(value.points_per_part) ||
-    !Number.isInteger(value.points_per_part) ||
-    !isFiniteNumber(value.part_quantity) ||
-    !Number.isInteger(value.part_quantity) ||
-    !isFiniteNumber(value.total_holes) ||
-    !Number.isInteger(value.total_holes) ||
-    !Array.isArray(value.points) ||
-    typeof value.notes !== 'string' ||
-    (value.fastener_code !== null && typeof value.fastener_code !== 'string')
-  ) {
-    throw new Error('The build manifest contains an invalid drill operation.')
-  }
-  const points = value.points.map((point) => {
+  const operation = expectFields(
+    value,
+    {
+      operation_id: field.string,
+      part_number: field.string,
+      label: field.string,
+      kind: field.string,
+      face: field.string,
+      view_axes: isViewAxes,
+      diameter_mm: field.positive,
+      counts_fastener: field.boolean,
+      geometry_mode: isGeometryMode,
+      points_per_part: field.nonnegativeInteger,
+      part_quantity: field.nonnegativeInteger,
+      total_holes: field.nonnegativeInteger,
+      points: field.array,
+      notes: field.string,
+      fastener_code: isNullableString,
+    },
+    'The build manifest contains an invalid drill operation.',
+  )
+  const points = operation.points.map((point) => {
     if (!isRecord(point) || typeof point.label !== 'string') {
       throw new Error('A drill operation contains an invalid point.')
     }
@@ -205,73 +210,70 @@ function parseDrillOperation(value: unknown): ManifestDrillOperation {
     }
   })
   if (
-    points.length !== value.points_per_part ||
-    value.total_holes !== value.points_per_part * value.part_quantity
+    points.length !== operation.points_per_part ||
+    operation.total_holes !==
+      operation.points_per_part * operation.part_quantity
   ) {
     throw new Error('A drill operation has inconsistent hole quantities.')
   }
 
   return {
-    operationId: value.operation_id,
-    partNumber: value.part_number,
-    label: value.label,
-    kind: value.kind,
-    face: value.face,
-    viewAxes: value.view_axes as [AxisName, AxisName],
-    diameterMm: value.diameter_mm,
+    operationId: operation.operation_id,
+    partNumber: operation.part_number,
+    label: operation.label,
+    kind: operation.kind,
+    face: operation.face,
+    viewAxes: operation.view_axes,
+    diameterMm: operation.diameter_mm,
     depthMm: nullableNumber(
-      value.depth_mm,
+      operation.depth_mm,
       'A drill operation has an invalid depth.',
     ),
     countersinkDiameterMm: nullableNumber(
-      value.countersink_diameter_mm,
+      operation.countersink_diameter_mm,
       'A drill operation has an invalid countersink.',
     ),
     angleDeg: nullableNumber(
-      value.angle_deg,
+      operation.angle_deg,
       'A drill operation has an invalid angle.',
     ),
-    fastenerCode: value.fastener_code,
-    countsFastener: value.counts_fastener,
-    geometryMode: value.geometry_mode,
-    pointsPerPart: value.points_per_part,
-    partQuantity: value.part_quantity,
-    totalHoles: value.total_holes,
+    fastenerCode: operation.fastener_code,
+    countsFastener: operation.counts_fastener,
+    geometryMode: operation.geometry_mode,
+    pointsPerPart: operation.points_per_part,
+    partQuantity: operation.part_quantity,
+    totalHoles: operation.total_holes,
     points,
-    notes: value.notes,
+    notes: operation.notes,
   }
 }
 
 function parseJoint(value: unknown): ManifestJoint {
-  if (
-    !isRecord(value) ||
-    typeof value.joint_id !== 'string' ||
-    typeof value.description !== 'string' ||
-    typeof value.source_part_number !== 'string' ||
-    typeof value.target_part_number !== 'string' ||
-    typeof value.fastener_code !== 'string' ||
-    !isFiniteNumber(value.quantity) ||
-    !Number.isInteger(value.quantity) ||
-    value.quantity < 1 ||
-    !Array.isArray(value.drill_operation_ids) ||
-    !value.drill_operation_ids.every((item) => typeof item === 'string') ||
-    !isFiniteNumber(value.assembly_step) ||
-    !Number.isInteger(value.assembly_step) ||
-    value.assembly_step < 1 ||
-    typeof value.notes !== 'string'
-  ) {
-    throw new Error('The build manifest contains an invalid joint entry.')
-  }
+  const joint = expectFields(
+    value,
+    {
+      joint_id: field.string,
+      description: field.string,
+      source_part_number: field.string,
+      target_part_number: field.string,
+      fastener_code: field.string,
+      quantity: field.positiveInteger,
+      drill_operation_ids: field.stringArray,
+      assembly_step: field.positiveInteger,
+      notes: field.string,
+    },
+    'The build manifest contains an invalid joint entry.',
+  )
   return {
-    jointId: value.joint_id,
-    description: value.description,
-    sourcePartNumber: value.source_part_number,
-    targetPartNumber: value.target_part_number,
-    fastenerCode: value.fastener_code,
-    quantity: value.quantity,
-    drillOperationIds: value.drill_operation_ids,
-    assemblyStep: value.assembly_step,
-    notes: value.notes,
+    jointId: joint.joint_id,
+    description: joint.description,
+    sourcePartNumber: joint.source_part_number,
+    targetPartNumber: joint.target_part_number,
+    fastenerCode: joint.fastener_code,
+    quantity: joint.quantity,
+    drillOperationIds: joint.drill_operation_ids,
+    assemblyStep: joint.assembly_step,
+    notes: joint.notes,
   }
 }
 
@@ -286,23 +288,23 @@ function parseJoinery(value: unknown, parts: ManifestPart[]): ManifestJoinery {
       joints: [],
     }
   }
-  if (
-    !isRecord(value) ||
-    typeof value.status !== 'string' ||
-    !Array.isArray(value.notes) ||
-    !value.notes.every((note) => typeof note === 'string') ||
-    !Array.isArray(value.fasteners) ||
-    !Array.isArray(value.drill_operations) ||
-    !Array.isArray(value.joints)
-  ) {
-    throw new Error('The build manifest contains an invalid joinery schedule.')
-  }
-  const fasteners = value.fasteners.map(parseFastener)
-  const externalTargets = Array.isArray(value.external_targets)
-    ? value.external_targets.map(parseExternalTarget)
+  const schedule = expectFields(
+    value,
+    {
+      status: field.string,
+      notes: field.stringArray,
+      fasteners: field.array,
+      drill_operations: field.array,
+      joints: field.array,
+    },
+    'The build manifest contains an invalid joinery schedule.',
+  )
+  const fasteners = schedule.fasteners.map(parseFastener)
+  const externalTargets = Array.isArray(schedule.external_targets)
+    ? schedule.external_targets.map(parseExternalTarget)
     : []
-  const drillOperations = value.drill_operations.map(parseDrillOperation)
-  const joints = value.joints.map(parseJoint)
+  const drillOperations = schedule.drill_operations.map(parseDrillOperation)
+  const joints = schedule.joints.map(parseJoint)
   const partNumbers = new Set(parts.map((part) => part.partNumber))
   const externalTargetCodes = new Set(
     externalTargets.map((target) => target.code),
@@ -357,8 +359,8 @@ function parseJoinery(value: unknown, parts: ManifestPart[]): ManifestJoinery {
     )
   }
   return {
-    status: value.status,
-    notes: value.notes,
+    status: schedule.status,
+    notes: schedule.notes,
     externalTargets,
     fasteners,
     drillOperations,
@@ -367,31 +369,29 @@ function parseJoinery(value: unknown, parts: ManifestPart[]): ManifestJoinery {
 }
 
 export function parseManifest(value: unknown): FurnitureManifest {
-  if (
-    !isRecord(value) ||
-    value.schema_version !== 1 ||
-    value.units !== 'mm' ||
-    typeof value.name !== 'string' ||
-    typeof value.model !== 'string' ||
-    !isFiniteNumber(value.part_occurrences) ||
-    !Number.isInteger(value.part_occurrences) ||
-    !Array.isArray(value.parts)
-  ) {
-    throw new Error(
-      'Unsupported build manifest. Rebuild the furniture exports with QueryCAD.',
-    )
-  }
+  const manifest = expectFields(
+    value,
+    {
+      schema_version: (candidate): candidate is 1 => candidate === 1,
+      units: (candidate): candidate is 'mm' => candidate === 'mm',
+      name: field.string,
+      model: field.string,
+      part_occurrences: field.nonnegativeInteger,
+      parts: field.array,
+    },
+    'Unsupported build manifest. Rebuild the furniture exports with QueryCAD.',
+  )
 
-  const parts = value.parts.map(parsePart)
-  const joinery = parseJoinery(value.joinery, parts)
-  const familyId = identityString(value.family, value.name)
-  const variantId = identityString(value.variant, 'default')
-  const variantLabel = identityString(value.variant_label, 'Default')
+  const parts = manifest.parts.map(parsePart)
+  const joinery = parseJoinery(manifest.joinery, parts)
+  const familyId = identityString(manifest.family, manifest.name)
+  const variantId = identityString(manifest.variant, 'default')
+  const variantLabel = identityString(manifest.variant_label, 'Default')
   const countedOccurrences = parts.reduce(
     (total, part) => total + part.quantity,
     0,
   )
-  if (countedOccurrences !== value.part_occurrences) {
+  if (countedOccurrences !== manifest.part_occurrences) {
     throw new Error(
       'The build manifest part count does not match its inventory.',
     )
@@ -399,13 +399,13 @@ export function parseManifest(value: unknown): FurnitureManifest {
 
   return {
     schemaVersion: 1,
-    name: value.name,
-    model: value.model,
+    name: manifest.name,
+    model: manifest.model,
     familyId,
     variantId,
     variantLabel,
     units: 'mm',
-    partOccurrences: value.part_occurrences,
+    partOccurrences: manifest.part_occurrences,
     parts,
     joinery,
   }
@@ -415,38 +415,20 @@ export function assertManifestMatchesDesign(
   manifest: FurnitureManifest,
   design: CatalogDesign,
 ): void {
-  const mismatches: string[] = []
-
-  if (manifest.name !== design.name) {
-    mismatches.push(
-      `name is "${manifest.name}" in the manifest but "${design.name}" in the catalog`,
-    )
-  }
-  if (manifest.model !== design.model) {
-    mismatches.push(
-      `model is "${manifest.model}" in the manifest but "${design.model}" in the catalog`,
-    )
-  }
-  if (manifest.familyId !== design.familyId) {
-    mismatches.push(
-      `family is "${manifest.familyId}" in the manifest but "${design.familyId}" in the catalog`,
-    )
-  }
-  if (manifest.variantId !== design.variantId) {
-    mismatches.push(
-      `variant is "${manifest.variantId}" in the manifest but "${design.variantId}" in the catalog`,
-    )
-  }
-  if (manifest.variantLabel !== design.variantLabel) {
-    mismatches.push(
-      `variant label is "${manifest.variantLabel}" in the manifest but "${design.variantLabel}" in the catalog`,
-    )
-  }
-  if (manifest.partOccurrences !== design.partOccurrences) {
-    mismatches.push(
-      `part count is ${manifest.partOccurrences} in the manifest but ${design.partOccurrences} in the catalog`,
-    )
-  }
+  const comparisons: Array<[string, string | number, string | number]> = [
+    ['name', manifest.name, design.name],
+    ['model', manifest.model, design.model],
+    ['family', manifest.familyId, design.familyId],
+    ['variant', manifest.variantId, design.variantId],
+    ['variant label', manifest.variantLabel, design.variantLabel],
+    ['part count', manifest.partOccurrences, design.partOccurrences],
+  ]
+  const mismatches = comparisons
+    .filter(([, manifestValue, catalogValue]) => manifestValue !== catalogValue)
+    .map(([label, manifestValue, catalogValue]) => {
+      const quote = typeof manifestValue === 'string' ? '"' : ''
+      return `${label} is ${quote}${manifestValue}${quote} in the manifest but ${quote}${catalogValue}${quote} in the catalog`
+    })
 
   if (mismatches.length > 0) {
     throw new Error(

@@ -1,19 +1,20 @@
-import { useEffect, useMemo, useState } from 'react'
 import type { CatalogDesign } from '../types'
 import { AssemblyGuide } from './AssemblyGuide'
 import { AssemblyPreview } from './AssemblyPreview'
 import { HardwarePanel } from './HardwarePanel'
 import { MaterialsHero } from './MaterialsHero'
-import { MaterialsTabs, type MaterialsTab } from './MaterialsTabs'
-import {
-  buildMaterialsViewModel,
-  partPreviewContext,
-} from './materialsViewModel'
-import { PartsPanel, type PartsView } from './PartsPanel'
+import { MaterialsTabs } from './MaterialsTabs'
+import { PartsPanel } from './PartsPanel'
 import { schematicScale } from './schematic'
-import { useAssemblyProgress } from './useAssemblyProgress'
-import { useBuildManifest } from './useBuildManifest'
-import './MaterialsWorkspace.css'
+import { useMaterialsWorkspace } from './useMaterialsWorkspace'
+import './MaterialsPage.css'
+import './PartSchematic.css'
+import './AssemblyCanvas.css'
+import './PartDetail.css'
+import './MaterialsLayout.css'
+import './MaterialsInventory.css'
+import './MaterialsPreview.css'
+import './MaterialsResponsive.css'
 
 type MaterialPreviewProps = {
   designs: CatalogDesign[]
@@ -26,68 +27,8 @@ export function MaterialPreview({
   activeDesign,
   onSelectDesign,
 }: MaterialPreviewProps) {
-  const { manifest, error, retry } = useBuildManifest(activeDesign)
-  const [activeTab, setActiveTab] = useState<MaterialsTab>('assembly')
-  const [partsView, setPartsView] = useState<PartsView>('cards')
-  const [showCoordinates, setShowCoordinates] = useState(false)
-  const [hoveredPartNumber, setHoveredPartNumber] = useState<string | null>(
-    null,
-  )
-  const [activeStepNumber, setActiveStepNumber] = useState<number | null>(null)
-  const model = useMemo(
-    () => (manifest ? buildMaterialsViewModel(manifest) : null),
-    [manifest],
-  )
-  const stepNumbers = useMemo(
-    () => model?.assemblySteps.map((step) => step.number) ?? [],
-    [model],
-  )
-  const { completedSteps, toggleStep } = useAssemblyProgress(
-    activeDesign?.id ?? 'none',
-    activeDesign?.revision ?? 'none',
-    stepNumbers,
-  )
-
-  useEffect(() => {
-    setHoveredPartNumber(null)
-    setActiveTab('assembly')
-    setPartsView('cards')
-    setShowCoordinates(false)
-  }, [activeDesign?.id, activeDesign?.revision])
-
-  useEffect(() => {
-    setActiveStepNumber((current) =>
-      stepNumbers.includes(current ?? -1) ? current : (stepNumbers[0] ?? null),
-    )
-  }, [stepNumbers])
-
-  const activeStep =
-    model?.assemblySteps.find((step) => step.number === activeStepNumber) ??
-    null
-  const activeStepIndex = model?.assemblySteps.findIndex(
-    (step) => step.number === activeStepNumber,
-  )
-  const hoveredPart =
-    model?.parts.find((part) => part.partNumber === hoveredPartNumber) ?? null
-  const selectedParts = hoveredPart
-    ? [hoveredPart]
-    : activeTab === 'assembly'
-      ? (activeStep?.parts ?? [])
-      : []
-  const previewContext = hoveredPart
-    ? partPreviewContext(hoveredPart)
-    : activeTab === 'assembly' && activeStep
-      ? activeStep.previewContext
-      : undefined
-
-  const selectAdjacentStep = (offset: number) => {
-    const currentIndex = model?.assemblySteps.findIndex(
-      (step) => step.number === activeStepNumber,
-    )
-    if (currentIndex === undefined || currentIndex < 0 || !model) return
-    const candidate = model.assemblySteps[currentIndex + offset]
-    if (candidate) setActiveStepNumber(candidate.number)
-  }
+  const workspace = useMaterialsWorkspace(activeDesign)
+  const { manifest, error, retry, model } = workspace
 
   return (
     <div className="materials-page">
@@ -97,13 +38,11 @@ export function MaterialPreview({
             Build a furniture design to see its material inventory.
           </div>
         )}
-
         {activeDesign && !manifest && !error && (
           <div className="materials-message is-loading">
             Reading the generated part manifest…
           </div>
         )}
-
         {error && (
           <div className="materials-message is-error" role="alert">
             <span>{error}</span>
@@ -124,38 +63,38 @@ export function MaterialPreview({
             <div className="mw-workbench">
               <div className="mw-document-column">
                 <MaterialsTabs
-                  activeTab={activeTab}
+                  activeTab={workspace.activeTab}
                   stepCount={model.assemblySteps.length}
                   partCount={model.parts.length}
                   fastenerCount={model.hardware.totalFasteners}
-                  onChange={setActiveTab}
+                  onChange={workspace.setActiveTab}
                 />
-                {activeTab === 'assembly' && (
+                {workspace.activeTab === 'assembly' && (
                   <AssemblyGuide
                     design={activeDesign}
                     steps={model.assemblySteps}
-                    activeStepNumber={activeStepNumber}
-                    completedSteps={completedSteps}
-                    onSelectStep={setActiveStepNumber}
-                    onToggleStep={toggleStep}
-                    onHoverPart={setHoveredPartNumber}
+                    activeStepNumber={workspace.activeStepNumber}
+                    completedSteps={workspace.completedSteps}
+                    onSelectStep={workspace.setActiveStepNumber}
+                    onToggleStep={workspace.toggleStep}
+                    onHoverPart={workspace.setHoveredPartNumber}
                   />
                 )}
-                {activeTab === 'parts' && (
+                {workspace.activeTab === 'parts' && (
                   <PartsPanel
                     design={activeDesign}
                     groups={model.materialGroups}
                     scale={schematicScale(model.parts)}
-                    selectedPartNumber={hoveredPartNumber}
+                    selectedPartNumber={workspace.hoveredPartNumber}
                     drillOperationsByPart={model.drillOperationsByPart}
-                    view={partsView}
-                    showCoordinates={showCoordinates}
-                    onViewChange={setPartsView}
-                    onCoordinatesChange={setShowCoordinates}
-                    onHoverPart={setHoveredPartNumber}
+                    view={workspace.partsView}
+                    showCoordinates={workspace.showCoordinates}
+                    onViewChange={workspace.setPartsView}
+                    onCoordinatesChange={workspace.setShowCoordinates}
+                    onHoverPart={workspace.setHoveredPartNumber}
                   />
                 )}
-                {activeTab === 'hardware' && (
+                {workspace.activeTab === 'hardware' && (
                   <HardwarePanel
                     design={activeDesign}
                     hardware={model.hardware}
@@ -164,24 +103,9 @@ export function MaterialPreview({
               </div>
               <AssemblyPreview
                 design={activeDesign}
-                selectedParts={selectedParts}
-                context={previewContext}
-                navigation={
-                  activeTab === 'assembly' &&
-                  activeStep &&
-                  activeStepIndex !== undefined &&
-                  activeStepIndex >= 0
-                    ? {
-                        currentPosition: activeStepIndex + 1,
-                        steps: model.assemblySteps.map((step) => ({
-                          number: step.number,
-                          complete: completedSteps.has(step.number),
-                        })),
-                        onPrevious: () => selectAdjacentStep(-1),
-                        onNext: () => selectAdjacentStep(1),
-                      }
-                    : undefined
-                }
+                selectedParts={workspace.selectedParts}
+                context={workspace.previewContext}
+                navigation={workspace.navigation}
               />
             </div>
           </>

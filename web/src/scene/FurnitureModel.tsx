@@ -1,10 +1,11 @@
-import { Clone, TransformControls, useGLTF } from '@react-three/drei'
-import { useEffect, useMemo, useRef } from 'react'
-import { Box3, MathUtils, Vector3, type Object3D } from 'three'
+import { Clone, TransformControls } from '@react-three/drei'
+import { useRef } from 'react'
+import { MathUtils, type Object3D } from 'three'
 import type { TransformControls as TransformControlsImpl } from 'three-stdlib'
 import { DEFAULT_PLACEMENT, useEditorStore } from '../state/editor'
 import type { CatalogDesign, Placement } from '../types'
 import { DarkWoodModel } from './DarkWoodModel'
+import { useFurnitureAsset, useFurnitureNormalization } from './furnitureAsset'
 import { usesDarkWoodTexture } from './furnitureAppearance'
 
 function rounded(value: number, precision = 1) {
@@ -21,33 +22,8 @@ export function FurnitureModel({ design }: { design: CatalogDesign }) {
   const snapping = useEditorStore((state) => state.snapping)
   const showHelpers = useEditorStore((state) => state.showHelpers)
   const showTextures = useEditorStore((state) => state.showTextures)
-  const source = `${design.artifacts.glb}?revision=${design.revision}`
-  const { scene } = useGLTF(source)
-
-  useEffect(() => () => useGLTF.clear(source), [source])
-
-  const normalized = useMemo(() => {
-    scene.updateMatrixWorld(true)
-    const bounds = new Box3().setFromObject(scene)
-    const sourceSize = bounds.getSize(new Vector3())
-    const expectedSize = new Vector3(
-      design.overallSizeMm.x,
-      design.overallSizeMm.z,
-      design.overallSizeMm.y,
-    )
-    const sourceLongest = Math.max(sourceSize.x, sourceSize.y, sourceSize.z)
-    const expectedLongest = Math.max(
-      expectedSize.x,
-      expectedSize.y,
-      expectedSize.z,
-    )
-    const scale = sourceLongest > 0 ? expectedLongest / sourceLongest : 1
-    const center = bounds.getCenter(new Vector3())
-    return {
-      scale,
-      offset: [-center.x, -bounds.min.y, -center.z] as [number, number, number],
-    }
-  }, [design, scene])
+  const scene = useFurnitureAsset(design)
+  const normalized = useFurnitureNormalization(scene, design)
 
   const commitTransform = () => {
     const root = (

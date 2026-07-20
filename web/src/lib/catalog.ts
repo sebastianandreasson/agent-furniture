@@ -1,10 +1,7 @@
 import type { BuildCatalog, CatalogDesign } from '../types'
+import { field, isRecord } from './contract'
 
 export const CATALOG_URL = '/catalog.json'
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
 
 function isDesign(value: unknown): value is CatalogDesign {
   if (
@@ -14,25 +11,19 @@ function isDesign(value: unknown): value is CatalogDesign {
   ) {
     return false
   }
+  const artifacts = value.artifacts
+  const overallSizeMm = value.overallSizeMm
   return (
-    typeof value.id === 'string' &&
-    typeof value.name === 'string' &&
-    typeof value.model === 'string' &&
-    typeof value.familyId === 'string' &&
-    value.familyId.length > 0 &&
-    typeof value.variantId === 'string' &&
-    value.variantId.length > 0 &&
-    typeof value.variantLabel === 'string' &&
-    value.variantLabel.length > 0 &&
-    typeof value.revision === 'string' &&
-    typeof value.artifacts.glb === 'string' &&
-    typeof value.artifacts.manifest === 'string' &&
-    typeof value.partOccurrences === 'number' &&
-    Number.isInteger(value.partOccurrences) &&
-    value.partOccurrences >= 0 &&
-    typeof value.overallSizeMm.x === 'number' &&
-    typeof value.overallSizeMm.y === 'number' &&
-    typeof value.overallSizeMm.z === 'number'
+    ['id', 'name', 'model', 'revision'].every((name) =>
+      field.string(value[name]),
+    ) &&
+    ['familyId', 'variantId', 'variantLabel'].every((name) =>
+      field.nonEmptyString(value[name]),
+    ) &&
+    field.string(artifacts.glb) &&
+    field.string(artifacts.manifest) &&
+    field.nonnegativeInteger(value.partOccurrences) &&
+    ['x', 'y', 'z'].every((axis) => field.finite(overallSizeMm[axis]))
   )
 }
 

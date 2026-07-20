@@ -25,7 +25,8 @@ The `querycad.furniture` package is the public authoring Interface. Its main con
 
 - `FurnitureSpec`: common mapping, serialization, and baseline validation for frozen specifications.
 - `PartCatalog` and `PartHandle`: an authoring Implementation that lets separate subassemblies add
-  occurrences to one stable part definition before it is frozen.
+  occurrences to one stable part definition before it is frozen. `define_stock` is the concise path
+  for rectangular cut stock; `define` remains the explicit path for machined or composite solids.
 - `Placement`, `Part`, and `Design`: immutable output records. A `Design` is the aggregate root
   validated and consumed by every exporter; its family and variant identity travel with every
   artifact.
@@ -44,11 +45,17 @@ The entryway bench package is the detailed baseline:
 
 - `spec.py` owns editable values and impossible-combination checks.
 - `layout.py` owns every derived position and clearance shared by other Modules.
-- `parts.py` owns local solids, stable part numbers, and the main-frame, extension, and upholstery
-  subassemblies. The shoe-shelf and umbrella-storage variants compose their selected extension onto
-  the same frame and reuse the main `LEG-001` definition through the catalog.
-- `joinery.py` owns hardware assumptions, drill operations, and assembly sequence.
+- `part_numbers.py` is the stable output vocabulary; `parts.py` only composes the focused builders in
+  `subassemblies/`. The shoe-shelf and umbrella-storage variants select an extension builder while
+  reusing the main `LEG-001` definition through the catalog.
+- `joinery.py` composes the focused frame, shelf, and storage operations in
+  `joinery_operations/`. Shared fastener and drilling factories live beside those operations rather
+  than being repeated across the schedule.
 - `model.py` is a short composition root with no geometry literals.
+
+The built-in bookshelf applies the same shape at a larger scale. In particular, its cabinet run
+separates the structural carcasses, post-zone bridges, decorative fronts, and stable part numbers.
+The orchestrator preserves artifact order while each Module keeps one construction concern local.
 
 The apron table remains intentionally small. It demonstrates that a family should not be split into
 files until the additional Seams improve Locality.
@@ -65,6 +72,12 @@ inventory summaries, schematics, schedules, and the highlighted assembly without
 source or recognizing individual furniture builds. Catalog `familyId`, `variantId`, and
 `variantLabel` fields group independently generated builds; selecting a variant replaces the whole
 artifact set rather than patching browser geometry.
+
+Within the browser, `lib/contract.ts` is the decoding Interface for generated JSON and
+`scene/furnitureAsset.ts` owns GLB loading plus axis normalization. The materials workspace hook owns
+navigation and selection state; render Modules receive that state and stay presentation-focused.
+Large style sheets are split by the UI surface they describe, preserving cascade order without one
+global file becoming the owner of unrelated screens.
 
 ## When to deepen the Interface
 

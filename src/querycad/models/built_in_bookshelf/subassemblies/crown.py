@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import cadquery as cq
 
-from querycad.furniture import PartCatalog, stock_box
+from querycad.furniture import PartCatalog
 from querycad.models.built_in_bookshelf.layout import BuiltInLayout
 from querycad.models.built_in_bookshelf.spec import BuiltInBookshelfSpec
 from querycad.models.built_in_bookshelf.subassemblies.materials import DARK_OAK
@@ -54,12 +54,11 @@ def add_crown(
     """Add restrained trim below the exposed beam, including the right slope."""
 
     for bay in layout.bays[:2]:
-        catalog.define(
+        catalog.define_stock(
             number=CROWNS[bay.name],
             description=f"Simple crown below the top beam in the {bay.name} opening",
             material=spec.finish_material,
-            shape=stock_box(bay.fitted_width, spec.crown_depth, spec.crown_height),
-            stock_size_mm=(bay.fitted_width, spec.crown_depth, spec.crown_height),
+            size_mm=(bay.fitted_width, spec.crown_depth, spec.crown_height),
             color=DARK_OAK,
         ).place(
             f"crown_{bay.name}",

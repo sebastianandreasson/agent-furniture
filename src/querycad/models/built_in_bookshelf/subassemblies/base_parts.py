@@ -1,0 +1,47 @@
+"""Stable BOM identifiers for the built-in base-cabinet run."""
+
+BASE_VERTICAL = "BASE-CARCASS-VERTICAL-001"
+BASE_DIVIDER = "BASE-CARCASS-DIVIDER-001"
+FACE_FRAME_STILE = "FACE-FRAME-STILE-001"
+FACE_FRAME_CENTER_STILE = "FACE-FRAME-CENTER-STILE-001"
+DOOR_KNOB = "DOOR-KNOB-001"
+
+BASE_BOTTOMS = {
+    "left": "BASE-BOTTOM-LEFT-001",
+    "middle": "BASE-BOTTOM-MIDDLE-001",
+    "right": "BASE-BOTTOM-RIGHT-001",
+}
+COUNTERS = {
+    "left": "COUNTER-LEFT-001",
+    "middle": "COUNTER-MIDDLE-001",
+    "right": "COUNTER-RIGHT-001",
+}
+PLINTH_FRONTS = {
+    "left": "PLINTH-FRONT-LEFT-001",
+    "middle": "PLINTH-FRONT-MIDDLE-001",
+    "right": "PLINTH-FRONT-RIGHT-001",
+}
+FACE_FRAME_RAILS = {
+    "left": "FACE-FRAME-RAIL-LEFT-001",
+    "middle": "FACE-FRAME-RAIL-MIDDLE-001",
+    "right": "FACE-FRAME-RAIL-RIGHT-001",
+}
+POST_COUNTER_BRIDGES = {
+    "left": "POST-CABINET-COUNTER-BRIDGE-LEFT-001",
+    "middle": "POST-CABINET-COUNTER-BRIDGE-MIDDLE-001",
+}
+POST_FIXED_PANELS = {
+    "left": "POST-CABINET-FIXED-PANEL-LEFT-001",
+    "middle": "POST-CABINET-FIXED-PANEL-MIDDLE-001",
+}
+POST_PLINTH_BRIDGES = {
+    "left": "POST-CABINET-PLINTH-BRIDGE-LEFT-001",
+    "middle": "POST-CABINET-PLINTH-BRIDGE-MIDDLE-001",
+}
+DOORS = {
+    "door_left_left": "DOOR-LEFT-LH-001",
+    "door_left_right": "DOOR-LEFT-RH-001",
+    "door_middle_left": "DOOR-MIDDLE-LH-001",
+    "door_middle_right": "DOOR-MIDDLE-RH-001",
+    "door_right": "DOOR-RIGHT-001",
+}

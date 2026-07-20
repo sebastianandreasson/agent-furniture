@@ -1,0 +1,231 @@
+.schematic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+  background: transparent;
+}
+
+.schematic-piece {
+  appearance: none;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 12px;
+  border: 1px solid #b8b8b0;
+  border-radius: 8px;
+  outline: 0;
+  background: #f7f4ecde;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: zoom-in;
+  break-inside: avoid;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease;
+}
+
+.schematic-piece:hover,
+.schematic-piece:focus-visible,
+.schematic-piece.is-active {
+  z-index: 1;
+  border-color: #d86f38;
+  background: #fff8ec;
+  box-shadow:
+    0 12px 25px #6d351e2e,
+    inset 4px 0 #ef824b;
+  transform: translateY(-2px);
+}
+
+.schematic-piece-heading {
+  min-height: 31px;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.schematic-piece-heading > div {
+  min-width: 0;
+}
+
+.schematic-piece-heading span,
+.schematic-piece-heading strong {
+  display: block;
+}
+
+.schematic-piece-heading span {
+  margin-bottom: 4px;
+  color: #596164;
+  font: 700 10px/1 var(--mono);
+}
+
+.schematic-piece-heading strong {
+  overflow: hidden;
+  color: #1d2325;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schematic-piece-heading b {
+  flex: 0 0 auto;
+  color: #111719;
+  font: 850 22px/1 var(--mono);
+  letter-spacing: -0.04em;
+}
+
+.schematic-piece svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  color: #3d4649;
+}
+
+.schematic-face-grid {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  align-items: start;
+  gap: 12px;
+}
+
+.schematic-face {
+  min-width: 0;
+}
+
+.schematic-face + .schematic-face {
+  padding-left: 12px;
+  border-left: 1px dashed #c8c7bf;
+}
+
+.schematic-face-label {
+  min-height: 10px;
+  display: block;
+  margin: 6px 0 5px 3px;
+  color: #6c7375;
+  font: 700 10px/1 var(--mono);
+  text-transform: uppercase;
+}
+
+.drill-marker circle {
+  fill: #fff8ec;
+  stroke: #d75f2b;
+  stroke-width: 1.5px;
+}
+
+.drill-marker line {
+  stroke: #d75f2b;
+  stroke-width: 0.85px;
+}
+
+.drill-marker text {
+  fill: #a63c15 !important;
+  font: 700 8px/1 var(--mono) !important;
+}
+
+.drill-marker.is-countersunk_clearance circle {
+  fill: #ffd7bf;
+  stroke-width: 2px;
+}
+
+.drill-marker.is-pilot circle {
+  fill: #397486;
+  stroke: #f5fbfc;
+}
+
+.drill-marker.is-pilot line {
+  stroke: #397486;
+}
+
+.drill-marker circle.connection-dot {
+  fill: #d75f2b;
+  stroke: #fff8ec;
+  stroke-width: 0.75px;
+}
+
+.drill-marker.is-pilot circle.connection-dot {
+  fill: #397486;
+  stroke: #f5fbfc;
+  stroke-width: 0.75px;
+}
+
+.schematic-dimension line {
+  stroke: #4b5457;
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+
+.schematic-piece svg .schematic-dimension-label {
+  fill: #4b5457;
+  font: 650 9px/1 var(--mono);
+  letter-spacing: 0.01em;
+}
+
+.schematic-piece-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 7px;
+  border-top: 1px solid #cac9c1;
+  color: #5c6467;
+  font: 600 11.5px/1.4 var(--mono);
+}
+
+.schematic-piece-meta span:last-child {
+  color: #22292b;
+  text-align: right;
+}
+
+.drill-operation-list {
+  display: grid;
+  gap: 5px;
+  margin: 8px 0 7px;
+}
+
+.drill-operation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 3px 8px;
+  padding: 6px 7px;
+  border: 1px solid #d0cec5;
+  border-radius: 5px;
+  background: #ece9e0a8;
+  color: #454d50;
+  font: 650 11.5px/1.4 var(--mono);
+}
+
+.drill-operation > span {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.drill-operation strong {
+  color: #252c2e;
+  font-size: 11.5px;
+  text-align: right;
+}
+
+.drill-operation small {
+  grid-column: 1 / -1;
+  color: #596164;
+  font: 600 11px/1.45 var(--mono);
+}
+
+.no-drill-operation {
+  padding: 6px 7px;
+  border: 1px dashed #c6c5bd;
+  border-radius: 5px;
+  color: #7b8182;
+  font: 650 10px/1 var(--mono);
+}

@@ -1,0 +1,45 @@
+@media (max-width: 980px) {
+  .workspace {
+    grid-template-columns: 210px minmax(340px, 1fr);
+  }
+
+  .inspector-panel {
+    display: none;
+  }
+
+  .view-switcher button {
+    padding-inline: 7px;
+  }
+}
+
+@media (max-width: 700px) {
+  .header-status > span:not(.status-dot) {
+    display: none;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .app-header {
+    padding-inline: 13px;
+  }
+
+  .brand-block .eyebrow,
+  .brand-block h1 {
+    display: none;
+  }
+
+  .primary-nav button {
+    padding-inline: 9px;
+  }
+
+  .asset-panel {
+    display: none;
+  }
+
+  .viewport-help,
+  .view-switcher button:not(.is-active) {
+    display: none;
+  }
+}

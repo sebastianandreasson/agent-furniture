@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import cadquery as cq
 
-from querycad.furniture import PartCatalog, stock_box
+from querycad.furniture import PartCatalog
 from querycad.models.built_in_bookshelf.layout import BuiltInLayout
 from querycad.models.built_in_bookshelf.spec import BuiltInBookshelfSpec
 from querycad.models.built_in_bookshelf.subassemblies.materials import DARK_OAK
@@ -42,32 +42,22 @@ def add_core_uprights(
 ) -> None:
     """Add the full-height side planks that carry cabinets and upper shelves."""
 
-    left_uprights = catalog.define(
+    left_uprights = catalog.define_stock(
         number=CORE_UPRIGHT_LEFT,
         description="Full-height left-hand bookshelf core upright",
         material=spec.finish_material,
-        shape=stock_box(
-            spec.core_upright_thickness,
-            spec.shelf_depth,
-            spec.height_under_beam,
-        ),
-        stock_size_mm=(
+        size_mm=(
             spec.core_upright_thickness,
             spec.shelf_depth,
             spec.height_under_beam,
         ),
         color=DARK_OAK,
     )
-    right_uprights = catalog.define(
+    right_uprights = catalog.define_stock(
         number=CORE_UPRIGHT_RIGHT,
         description="Full-height right-hand bookshelf core upright",
         material=spec.finish_material,
-        shape=stock_box(
-            spec.core_upright_thickness,
-            spec.shelf_depth,
-            spec.height_under_beam,
-        ),
-        stock_size_mm=(
+        size_mm=(
             spec.core_upright_thickness,
             spec.shelf_depth,
             spec.height_under_beam,

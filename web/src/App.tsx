@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
+import './studio/StudioWorkspace.css'
+import './AppResponsive.css'
 import { useBuildCatalog } from './hooks/useBuildCatalog'
 import { AppHeader, type AppPage } from './layout/AppHeader'
 import { MaterialPreview } from './materials/MaterialPreview'
